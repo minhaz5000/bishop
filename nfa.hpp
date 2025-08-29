@@ -3,6 +3,7 @@
 
 #include <set>
 #include <vector>
+#include <unordered_map>
 
 #include "tokenizer.hpp"
 
@@ -13,6 +14,7 @@ struct State {
     bool is_accept;
     std::unordered_map<char, State*> transitions;
     std::vector<State*> epsilon;
+    State* any_transition{nullptr};
 };
 
 struct NFA {
@@ -20,16 +22,16 @@ struct NFA {
     State* end;
 };
 
-NFA create_nfa_concat(int& id, NFA first, NFA second);
 NFA create_nfa_literal(int& id, char ch);
-NFA create_nfa_question(int& id, NFA first);
-NFA create_nfa_plus(int& id, NFA first);
-NFA create_nfa_kleene_star(int& id, NFA first);
+NFA create_nfa_dot(int& id);
+NFA create_nfa_concat(int& id, NFA first, NFA second);
 NFA create_nfa_union(int& id, NFA first, NFA second);
+NFA create_nfa_kleene_star(int& id, NFA first);
+NFA create_nfa_plus(int& id, NFA first);
+NFA create_nfa_question(int& id, NFA first);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);
-
 bool nfa_match(NFA& nfa, const std::string& input);
 
 }  // namespace nfa

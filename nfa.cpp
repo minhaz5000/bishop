@@ -24,53 +24,45 @@ NFA parse_postfix(const std::vector<Token>& postfix)
                 st.push(create_nfa_literal(state_count, tok.value));
                 break;
 
+            case TokenType::Dot:
+                st.push(create_nfa_dot(state_count));
+                break;
+
             case TokenType::Star: {
-                NFA prev = st.top();
-                st.pop();
+                NFA prev = st.top(); st.pop();
                 st.push(create_nfa_kleene_star(state_count, prev));
                 break;
             }
-
             case TokenType::Plus: {
-                NFA prev = st.top();
-                st.pop();
+                NFA prev = st.top(); st.pop();
                 st.push(create_nfa_plus(state_count, prev));
                 break;
             }
-
             case TokenType::Question: {
-                NFA prev = st.top();
-                st.pop();
+                NFA prev = st.top(); st.pop();
                 st.push(create_nfa_question(state_count, prev));
                 break;
             }
-
             case TokenType::Union: {
-                NFA second = st.top();
-                st.pop();  // right operand
-                NFA first = st.top();
-                st.pop();  // left operand
+                NFA second = st.top(); st.pop();
+                NFA first  = st.top(); st.pop();
                 st.push(create_nfa_union(state_count, first, second));
                 break;
             }
-
             case TokenType::Concat: {
-                NFA second = st.top();
-                st.pop();  // right operand
-                NFA first = st.top();
-                st.pop();  // left operand
+                NFA second = st.top(); st.pop();
+                NFA first  = st.top(); st.pop();
                 st.push(create_nfa_concat(state_count, first, second));
                 break;
             }
-
             default:
-                std::cerr << "Error: unknown token type\n";
+                std::cerr << "unknown token\n";
                 exit(EXIT_FAILURE);
         }
     }
 
     if (st.size() != 1) {
-        std::cerr << "Error: postfix expression invalid\n";
+        std::cerr << "invalid postfix\n";
         exit(EXIT_FAILURE);
     }
 
@@ -81,136 +73,108 @@ std::set<State*> epsilon_closure(const std::set<State*>& states)
 {
     std::set<State*> closure = states;
     std::stack<State*> stk;
-
     for (State* s : states) stk.push(s);
 
     while (!stk.empty()) {
-        State* curr = stk.top();
-        stk.pop();
-
+        State* curr = stk.top(); stk.pop();
         for (State* next : curr->epsilon) {
-            if (closure.insert(next).second) {  // newly inserted
+            if (closure.insert(next).second)
                 stk.push(next);
-            }
         }
     }
-
     return closure;
 }
 
 bool nfa_match(NFA& nfa, const std::string& input)
 {
-    // Step 1: initial states (epsilon closure of start)
     std::set<State*> current = epsilon_closure({nfa.start});
 
-    // Step 2: process each character
     for (char c : input) {
         std::set<State*> next;
-
-        // Move on character transitions
         for (State* s : current) {
-            if (s->transitions.count(c)) {
-                next.insert(s->transitions[c]);
-            }
+            auto it = s->transitions.find(c);
+            if (it != s->transitions.end())
+                next.insert(it->second);
+            if (s->any_transition)
+                next.insert(s->any_transition);
         }
-
-        // Take epsilon closure of the next set
         current = epsilon_closure(next);
-
-        // No states reachable → fail early
         if (current.empty()) return false;
     }
 
-    // Step 3: check if any accepting state is reached
     for (State* s : current) {
         if (s->is_accept) return true;
     }
-
     return false;
 }
 
 NFA create_nfa_literal(int& id, char ch)
 {
     State* start = new State{id++, false};
-    State* end = new State{id++, true};
-
+    State* end   = new State{id++, true};
     start->transitions[ch] = end;
+    return {start, end};
+}
+
+NFA create_nfa_dot(int& id)
+{
+    State* start = new State{id++, false};
+    State* end   = new State{id++, true};
+    start->any_transition = end;
     return {start, end};
 }
 
 NFA create_nfa_union(int& id, NFA first, NFA second)
 {
     State* start = new State{id++, false};
-    State* end = new State{id++, true};
-
-    // new start has epsilon to both NFAs
+    State* end   = new State{id++, true};
     start->epsilon.push_back(first.start);
     start->epsilon.push_back(second.start);
-
-    // both old ends go to new end via epsilon
-    first.end->is_accept = false;
+    first.end->is_accept  = false;
     second.end->is_accept = false;
     first.end->epsilon.push_back(end);
     second.end->epsilon.push_back(end);
-
     return {start, end};
 }
 
 NFA create_nfa_kleene_star(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end = new State{id++, true};
-
-    // new start has epsilon to old start and new end
+    State* end   = new State{id++, true};
     start->epsilon.push_back(first.start);
     start->epsilon.push_back(end);
-
-    // old end has epsilon to old start and new end
     first.end->is_accept = false;
     first.end->epsilon.push_back(first.start);
     first.end->epsilon.push_back(end);
-
     return {start, end};
 }
 
 NFA create_nfa_plus(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end = new State{id++, true};
-
-    // new start must go into the first NFA
+    State* end   = new State{id++, true};
     start->epsilon.push_back(first.start);
-
-    // old end loops back and can also go to new end
     first.end->is_accept = false;
     first.end->epsilon.push_back(first.start);
     first.end->epsilon.push_back(end);
-
     return {start, end};
 }
 
 NFA create_nfa_question(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end = new State{id++, true};
-
-    // new start has epsilon to old start and new end
+    State* end   = new State{id++, true};
     start->epsilon.push_back(first.start);
     start->epsilon.push_back(end);
-
-    // old end has epsilon to new end
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
-
     return {start, end};
 }
 
 NFA create_nfa_concat(int& id, NFA first, NFA second)
 {
-    // join the end of first to the start of second
     first.end->is_accept = false;
     first.end->epsilon.push_back(second.start);
-
     return {first.start, second.end};
 }
 

@@ -4,11 +4,11 @@
 #include <stack>
 
 namespace tokenizer {
+
 std::vector<Token> tokenize(const std::string& s)
 {
-    if (s.empty()) {
-        return {};
-    }
+    if (s.empty()) return {};
+
     std::vector<Token> tokens;
     tokens.reserve(s.size());
 
@@ -20,27 +20,18 @@ std::vector<Token> tokenize(const std::string& s)
             tokens.push_back({TokenType::Literal, ch});
         } else {
             switch (ch) {
-                case '+':
-                    tokens.push_back({TokenType::Plus, ch});
+                case '+': tokens.push_back({TokenType::Plus,     ch}); break;
+                case '*': tokens.push_back({TokenType::Star,     ch}); break;
+                case '?': tokens.push_back({TokenType::Question, ch}); break;
+                case '|': tokens.push_back({TokenType::Union,    ch}); break;
+                case '(': tokens.push_back({TokenType::LParen,   ch}); break;
+                case ')': tokens.push_back({TokenType::RParen,   ch}); break;
+                case '.': tokens.push_back({TokenType::Dot,      ch}); break;
+                case '\\':
+                    ++it;
+                    tokens.push_back({TokenType::Literal, static_cast<unsigned char>(*it)});
                     break;
-                case '*':
-                    tokens.push_back({TokenType::Star, ch});
-                    break;
-                case '?':
-                    tokens.push_back({TokenType::Question, ch});
-                    break;
-                case '|':
-                    tokens.push_back({TokenType::Union, ch});
-                    break;
-                case '(':
-                    tokens.push_back({TokenType::LParen, ch});
-                    break;
-                case ')':
-                    tokens.push_back({TokenType::RParen, ch});
-                    break;
-                default:
-                    tokens.push_back({TokenType::Unknown, ch});
-                    break;
+                default:  tokens.push_back({TokenType::Unknown,  ch}); break;
             }
         }
         ++it;
@@ -50,31 +41,31 @@ std::vector<Token> tokenize(const std::string& s)
 
 std::vector<Token> insert_concats(const std::vector<Token>& s)
 {
-    if (s.empty()) {
-        return {};
-    }
+    if (s.empty()) return {};
 
     std::vector<Token> tokens;
     tokens.reserve(s.size() * 2);
 
     for (size_t i = 0; i < s.size(); ++i) {
         tokens.push_back(s[i]);
-
         if (i + 1 >= s.size()) break;
 
         const auto& curr = s[i];
         const auto& next = s[i + 1];
 
-        // if the curr is any of these tokens then concat is maybe allowed
-        bool curr_allows_concat = curr.type == TokenType::Literal || curr.type == TokenType::RParen ||
-                                  curr.type == TokenType::Star || curr.type == TokenType::Plus ||
-                                  curr.type == TokenType::Question;
+        bool curr_ok = curr.type == TokenType::Literal  ||
+                       curr.type == TokenType::RParen   ||
+                       curr.type == TokenType::Star     ||
+                       curr.type == TokenType::Plus     ||
+                       curr.type == TokenType::Question ||
+                       curr.type == TokenType::Dot;
 
-        bool next_allows_concat = next.type == TokenType::Literal || next.type == TokenType::LParen;
+        bool next_ok = next.type == TokenType::Literal ||
+                       next.type == TokenType::LParen  ||
+                       next.type == TokenType::Dot;
 
-        if (curr_allows_concat && next_allows_concat) {
+        if (curr_ok && next_ok)
             tokens.push_back({TokenType::Concat, '.'});
-        }
     }
 
     return tokens;
@@ -90,38 +81,40 @@ std::vector<Token> to_postfix(const std::vector<Token>& s)
 {
     if (s.empty()) return {};
 
-    std::stack<Token> operator_st;
+    std::stack<Token> op_st;
     std::vector<Token> out;
     out.reserve(s.size() * 2);
 
     for (const auto& tok : s) {
         switch (tok.type) {
             case TokenType::Literal:
+            case TokenType::Dot:
                 out.push_back(tok);
                 break;
             case TokenType::LParen:
-                operator_st.push(tok);
+                op_st.push(tok);
                 break;
             case TokenType::RParen:
-                while (!operator_st.empty() && operator_st.top().type != TokenType::LParen) {
-                    out.push_back(operator_st.top());
-                    operator_st.pop();
+                while (!op_st.empty() && op_st.top().type != TokenType::LParen) {
+                    out.push_back(op_st.top());
+                    op_st.pop();
                 }
-                if (!operator_st.empty()) operator_st.pop();  // discard '('
+                if (!op_st.empty()) op_st.pop();
                 break;
-            default:  // operators: *, +, ?, ·, |
-                while (!operator_st.empty() && precedence_of(operator_st.top().type) >= precedence_of(tok.type)) {
-                    out.push_back(operator_st.top());
-                    operator_st.pop();
+            default:
+                while (!op_st.empty() &&
+                       precedence_of(op_st.top().type) >= precedence_of(tok.type)) {
+                    out.push_back(op_st.top());
+                    op_st.pop();
                 }
-                operator_st.push(tok);
+                op_st.push(tok);
                 break;
         }
     }
 
-    while (!operator_st.empty()) {
-        out.push_back(operator_st.top());
-        operator_st.pop();
+    while (!op_st.empty()) {
+        out.push_back(op_st.top());
+        op_st.pop();
     }
 
     return out;
