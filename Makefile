@@ -1,8 +1,8 @@
 CXX      := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra -O2
+CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -I include
 
-SRCS     := tokenizer.cpp nfa.cpp
-OBJS     := $(SRCS:.cpp=.o)
+SRCS     := src/tokenizer.cpp src/nfa.cpp
+OBJS     := $(patsubst %.cpp,%.o,$(SRCS))
 
 .PHONY: all clean
 

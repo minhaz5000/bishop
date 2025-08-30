@@ -1,6 +1,6 @@
 #include <benchmark/benchmark.h>
-#include "nfa.hpp"
-#include "tokenizer.hpp"
+#include "bishop/nfa.hpp"
+#include "bishop/tokenizer.hpp"
 
 using nfa::NFA;
 using nfa::parse_postfix;

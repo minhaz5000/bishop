@@ -1,4 +1,4 @@
-#include "nfa.hpp"
+#include "bishop/nfa.hpp"
 
 #include <cstdlib>
 #include <set>
