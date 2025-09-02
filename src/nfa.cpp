@@ -18,7 +18,7 @@ NFA parse_postfix(const std::vector<Token>& postfix)
     std::stack<NFA> st;
     int state_count = 0;
 
-    for (auto& tok : postfix) {
+    for (const auto& tok : postfix) {
         switch (tok.type) {
             case TokenType::Literal:
                 st.push(create_nfa_literal(state_count, tok.value));
@@ -26,6 +26,10 @@ NFA parse_postfix(const std::vector<Token>& postfix)
 
             case TokenType::Dot:
                 st.push(create_nfa_dot(state_count));
+                break;
+
+            case TokenType::CharClass:
+                st.push(create_nfa_charclass(state_count, tok.char_set));
                 break;
 
             case TokenType::Star: {
@@ -121,6 +125,23 @@ NFA create_nfa_dot(int& id)
     State* start = new State{id++, false};
     State* end   = new State{id++, true};
     start->any_transition = end;
+    return {start, end};
+}
+
+NFA create_nfa_charclass(int& id, const std::vector<bool>& charset)
+{
+    State* start = new State{id++, false};
+    State* end   = new State{id++, true};
+
+    char buf[128];
+    int  n = 0;
+    for (int i = 0; i < 256; ++i) {
+        if (charset[i])
+            buf[n++] = static_cast<char>(i);
+    }
+    for (int i = 0; i < n; ++i)
+        start->transitions[static_cast<unsigned char>(buf[i])] = end;
+
     return {start, end};
 }
 

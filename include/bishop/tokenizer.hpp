@@ -11,12 +11,13 @@ namespace tokenizer {
 
 enum class TokenType {
     Literal, Union, Star, Plus, Question,
-    LParen, RParen, Concat, Dot, Unknown
+    LParen, RParen, Concat, Dot, CharClass, Unknown
 };
 
 struct Token {
-    TokenType type;
-    char value;
+    TokenType        type;
+    char             value;
+    std::vector<bool> char_set;
 };
 
 constexpr int precedence_of(TokenType t) {
@@ -32,16 +33,17 @@ constexpr int precedence_of(TokenType t) {
 
 inline std::string to_string(const TokenType t) {
     switch (t) {
-        case TokenType::Literal:  return "Literal";
-        case TokenType::Plus:     return "Plus";
-        case TokenType::Star:     return "Star";
-        case TokenType::Question: return "Question";
-        case TokenType::LParen:   return "LParen";
-        case TokenType::RParen:   return "RParen";
-        case TokenType::Union:    return "Union";
-        case TokenType::Concat:   return "Concat";
-        case TokenType::Dot:      return "Dot";
-        default:                  return "Unknown";
+        case TokenType::Literal:   return "Literal";
+        case TokenType::Plus:      return "Plus";
+        case TokenType::Star:      return "Star";
+        case TokenType::Question:  return "Question";
+        case TokenType::LParen:    return "LParen";
+        case TokenType::RParen:    return "RParen";
+        case TokenType::Union:     return "Union";
+        case TokenType::Concat:    return "Concat";
+        case TokenType::Dot:       return "Dot";
+        case TokenType::CharClass: return "CharClass";
+        default:                   return "Unknown";
     }
 }
 
