@@ -58,12 +58,15 @@ std::vector<Token> tokenize(const std::string& s)
                 case ')': tokens.push_back({TokenType::RParen,   ')', {}, 0, -1}); break;
                 case '.': tokens.push_back({TokenType::Dot,      '.', {}, 0, -1}); break;
 
-                case '\\':
+                case '\\': {
                     ++it;
-                    tokens.push_back({TokenType::Literal,
-                                      static_cast<char>(static_cast<unsigned char>(*it)),
-                                      {}, 0, -1});
+                    unsigned char esc = static_cast<unsigned char>(*it);
+                    switch (esc) {
+                        default:
+                            tokens.push_back({TokenType::Literal, static_cast<char>(esc), {}, 0, -1});
+                    }
                     break;
+                }
 
                 case '[': {
                     ++it;
