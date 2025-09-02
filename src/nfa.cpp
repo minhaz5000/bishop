@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <set>
 #include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace nfa {
 
@@ -10,6 +13,69 @@ using std::string;
 using std::vector;
 using tokenizer::Token;
 using tokenizer::TokenType;
+
+static std::vector<State*> collect_states(State* root)
+{
+    std::vector<State*> result;
+    std::unordered_set<State*> visited;
+    std::stack<State*> stk;
+    stk.push(root);
+
+    while (!stk.empty()) {
+        State* s = stk.top(); stk.pop();
+        if (!visited.insert(s).second) continue;
+        result.push_back(s);
+
+        for (State* e : s->epsilon)
+            stk.push(e);
+        for (auto& [ch, dst] : s->transitions)
+            stk.push(dst);
+    }
+
+    return result;
+}
+
+static NFA clone_nfa(int& id, const NFA& src)
+{
+    auto states = collect_states(src.start);
+
+    std::unordered_map<State*, State*> mapping;
+    for (State* s : states) {
+        State* fresh = new State{id++, s->is_accept};
+        mapping[s] = fresh;
+    }
+
+    for (State* s : states) {
+        State* fresh = mapping[s];
+        for (auto& [ch, dst] : s->transitions)
+            fresh->transitions[ch] = mapping[dst];
+        for (State* eps : s->epsilon)
+            fresh->epsilon.push_back(mapping[eps]);
+        if (s->any_transition)
+            fresh->any_transition = mapping[s->any_transition];
+    }
+
+    return {mapping[src.start], mapping[src.end]};
+}
+
+NFA create_nfa_repeat(int& id, const NFA& base, int min_rep, int max_rep)
+{
+    NFA result = clone_nfa(id, base);
+
+    for (int i = 1; i < min_rep; ++i)
+        result = create_nfa_concat(id, result, clone_nfa(id, base));
+
+    if (max_rep < 0) {
+        result = create_nfa_concat(id, result,
+                     create_nfa_kleene_star(id, clone_nfa(id, base)));
+    } else {
+        for (int i = min_rep; i < max_rep; ++i)
+            result = create_nfa_concat(id, result,
+                         create_nfa_question(id, clone_nfa(id, base)));
+    }
+
+    return result;
+}
 
 NFA parse_postfix(const std::vector<Token>& postfix)
 {
@@ -23,15 +89,12 @@ NFA parse_postfix(const std::vector<Token>& postfix)
             case TokenType::Literal:
                 st.push(create_nfa_literal(state_count, tok.value));
                 break;
-
             case TokenType::Dot:
                 st.push(create_nfa_dot(state_count));
                 break;
-
             case TokenType::CharClass:
                 st.push(create_nfa_charclass(state_count, tok.char_set));
                 break;
-
             case TokenType::Star: {
                 NFA prev = st.top(); st.pop();
                 st.push(create_nfa_kleene_star(state_count, prev));
@@ -45,6 +108,12 @@ NFA parse_postfix(const std::vector<Token>& postfix)
             case TokenType::Question: {
                 NFA prev = st.top(); st.pop();
                 st.push(create_nfa_question(state_count, prev));
+                break;
+            }
+            case TokenType::Repeat: {
+                NFA prev = st.top(); st.pop();
+                st.push(create_nfa_repeat(state_count, prev,
+                                          tok.repeat_min, tok.repeat_max));
                 break;
             }
             case TokenType::Union: {

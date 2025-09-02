@@ -25,6 +25,7 @@ struct NFA {
 NFA create_nfa_literal(int& id, char ch);
 NFA create_nfa_dot(int& id);
 NFA create_nfa_charclass(int& id, const std::vector<bool>& charset);
+NFA create_nfa_repeat(int& id, const NFA& base, int min_rep, int max_rep);
 NFA create_nfa_concat(int& id, NFA first, NFA second);
 NFA create_nfa_union(int& id, NFA first, NFA second);
 NFA create_nfa_kleene_star(int& id, NFA first);

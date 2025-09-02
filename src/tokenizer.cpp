@@ -14,33 +14,31 @@ std::vector<Token> tokenize(const std::string& s)
 
     auto it = s.cbegin();
     while (it != s.cend()) {
-        char ch = static_cast<unsigned char>(*it);
+        unsigned char ch = static_cast<unsigned char>(*it);
 
         if (std::isalnum(ch)) {
-            tokens.push_back({TokenType::Literal, ch, {}});
+            tokens.push_back({TokenType::Literal, (char)ch, {}, 0, -1});
         } else {
             switch (ch) {
-                case '+': tokens.push_back({TokenType::Plus,     ch, {}}); break;
-                case '*': tokens.push_back({TokenType::Star,     ch, {}}); break;
-                case '?': tokens.push_back({TokenType::Question, ch, {}}); break;
-                case '|': tokens.push_back({TokenType::Union,    ch, {}}); break;
-                case '(': tokens.push_back({TokenType::LParen,   ch, {}}); break;
-                case ')': tokens.push_back({TokenType::RParen,   ch, {}}); break;
-                case '.': tokens.push_back({TokenType::Dot,      ch, {}}); break;
+                case '+': tokens.push_back({TokenType::Plus,     '+', {}, 0, -1}); break;
+                case '*': tokens.push_back({TokenType::Star,     '*', {}, 0, -1}); break;
+                case '?': tokens.push_back({TokenType::Question, '?', {}, 0, -1}); break;
+                case '|': tokens.push_back({TokenType::Union,    '|', {}, 0, -1}); break;
+                case '(': tokens.push_back({TokenType::LParen,   '(', {}, 0, -1}); break;
+                case ')': tokens.push_back({TokenType::RParen,   ')', {}, 0, -1}); break;
+                case '.': tokens.push_back({TokenType::Dot,      '.', {}, 0, -1}); break;
 
                 case '\\':
                     ++it;
                     tokens.push_back({TokenType::Literal,
-                                      static_cast<unsigned char>(*it), {}});
+                                      static_cast<char>(static_cast<unsigned char>(*it)),
+                                      {}, 0, -1});
                     break;
 
                 case '[': {
                     ++it;
                     bool negated = false;
-                    if (it != s.cend() && *it == '^') {
-                        negated = true;
-                        ++it;
-                    }
+                    if (it != s.cend() && *it == '^') { negated = true; ++it; }
 
                     bool in_class[256] = {};
                     while (it != s.cend() && *it != ']') {
@@ -49,10 +47,9 @@ std::vector<Token> tokenize(const std::string& s)
                         if (it != s.cend() && *it == '-' &&
                             (it + 1) != s.cend() && *(it + 1) != ']') {
                             ++it;
-                            unsigned char end_c = static_cast<unsigned char>(*it);
+                            unsigned char ec = static_cast<unsigned char>(*it);
                             ++it;
-                            for (unsigned char r = c; r <= end_c; ++r)
-                                in_class[r] = true;
+                            for (unsigned char r = c; r <= ec; ++r) in_class[r] = true;
                         } else {
                             in_class[c] = true;
                         }
@@ -60,7 +57,7 @@ std::vector<Token> tokenize(const std::string& s)
                     if (it != s.cend()) ++it;
 
                     Token tok;
-                    tok.type  = TokenType::CharClass;
+                    tok.type = TokenType::CharClass;
                     tok.value = 0;
                     tok.char_set.resize(256, false);
                     for (int i = 0; i < 256; ++i)
@@ -69,7 +66,36 @@ std::vector<Token> tokenize(const std::string& s)
                     break;
                 }
 
-                default: tokens.push_back({TokenType::Unknown, ch, {}}); break;
+                case '{': {
+                    ++it;
+                    int mn = 0, mx = -1;
+                    while (it != s.cend() && std::isdigit(static_cast<unsigned char>(*it))) {
+                        mn = mn * 10 + (*it - '0');
+                        ++it;
+                    }
+                    if (it != s.cend() && *it == ',') {
+                        ++it;
+                        if (it != s.cend() && std::isdigit(static_cast<unsigned char>(*it))) {
+                            mx = 0;
+                            while (it != s.cend() &&
+                                   std::isdigit(static_cast<unsigned char>(*it))) {
+                                mx = mx * 10 + (*it - '0');
+                                ++it;
+                            }
+                        }
+                    } else {
+                        mx = mn;
+                    }
+                    Token tok;
+                    tok.type       = TokenType::Repeat;
+                    tok.value      = '{';
+                    tok.repeat_min = mn;
+                    tok.repeat_max = mx;
+                    tokens.push_back(std::move(tok));
+                    break;
+                }
+
+                default: tokens.push_back({TokenType::Unknown, (char)ch, {}, 0, -1}); break;
             }
         }
         ++it;
@@ -96,6 +122,7 @@ std::vector<Token> insert_concats(const std::vector<Token>& s)
                        curr.type == TokenType::Star       ||
                        curr.type == TokenType::Plus       ||
                        curr.type == TokenType::Question   ||
+                       curr.type == TokenType::Repeat     ||
                        curr.type == TokenType::Dot        ||
                        curr.type == TokenType::CharClass;
 
@@ -105,7 +132,7 @@ std::vector<Token> insert_concats(const std::vector<Token>& s)
                        next.type == TokenType::CharClass;
 
         if (curr_ok && next_ok)
-            tokens.push_back({TokenType::Concat, '.', {}});
+            tokens.push_back({TokenType::Concat, '.', {}, 0, -1});
     }
 
     return tokens;
@@ -153,11 +180,7 @@ std::vector<Token> to_postfix(const std::vector<Token>& s)
         }
     }
 
-    while (!op_st.empty()) {
-        out.push_back(op_st.top());
-        op_st.pop();
-    }
-
+    while (!op_st.empty()) { out.push_back(op_st.top()); op_st.pop(); }
     return out;
 }
 
