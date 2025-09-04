@@ -71,6 +71,15 @@ std::vector<Token> tokenize(const std::string& s)
                     ++it;
                     unsigned char esc = static_cast<unsigned char>(*it);
                     switch (esc) {
+                        case 'D':
+                            tokens.push_back(make_charclass(cs_negate(cs_range('0', '9'))));
+                            break;
+                        case 'W':
+                            tokens.push_back(make_charclass(cs_negate(cs_word())));
+                            break;
+                        case 'S':
+                            tokens.push_back(make_charclass(cs_negate(cs_space())));
+                            break;
                         case 'd':
                             tokens.push_back(make_charclass(cs_range('0', '9')));
                             break;
