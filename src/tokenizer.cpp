@@ -35,6 +35,15 @@ static Token make_charclass(std::vector<bool> cs) {
     return tok;
 }
 
+static std::vector<bool> cs_word() {
+    return cs_union(cs_union(cs_range('a','z'), cs_range('A','Z')),
+                    cs_union(cs_range('0','9'), cs_set({'_'})));
+}
+
+static std::vector<bool> cs_space() {
+    return cs_set({' ', '\t', '\n', '\r', '\f', '\v'});
+}
+
 std::vector<Token> tokenize(const std::string& s)
 {
     if (s.empty()) return {};
@@ -62,6 +71,15 @@ std::vector<Token> tokenize(const std::string& s)
                     ++it;
                     unsigned char esc = static_cast<unsigned char>(*it);
                     switch (esc) {
+                        case 'd':
+                            tokens.push_back(make_charclass(cs_range('0', '9')));
+                            break;
+                        case 'w':
+                            tokens.push_back(make_charclass(cs_word()));
+                            break;
+                        case 's':
+                            tokens.push_back(make_charclass(cs_space()));
+                            break;
                         default:
                             tokens.push_back({TokenType::Literal, static_cast<char>(esc), {}, 0, -1});
                     }
