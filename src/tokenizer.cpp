@@ -89,6 +89,11 @@ std::vector<Token> tokenize(const std::string& s)
                         case 's':
                             tokens.push_back(make_charclass(cs_space()));
                             break;
+                        case 'n': tokens.push_back({TokenType::Literal, '\n', {}, 0, -1}); break;
+                        case 't': tokens.push_back({TokenType::Literal, '\t', {}, 0, -1}); break;
+                        case 'r': tokens.push_back({TokenType::Literal, '\r', {}, 0, -1}); break;
+                        case 'v': tokens.push_back({TokenType::Literal, '\v', {}, 0, -1}); break;
+                        case '0': tokens.push_back({TokenType::Literal, '\0', {}, 0, -1}); break;
                         default:
                             tokens.push_back({TokenType::Literal, static_cast<char>(esc), {}, 0, -1});
                     }
