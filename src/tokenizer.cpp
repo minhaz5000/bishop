@@ -65,7 +65,9 @@ std::vector<Token> tokenize(const std::string& s)
                 case '|': tokens.push_back({TokenType::Union,    '|', {}, 0, -1}); break;
                 case '(': tokens.push_back({TokenType::LParen,   '(', {}, 0, -1}); break;
                 case ')': tokens.push_back({TokenType::RParen,   ')', {}, 0, -1}); break;
-                case '.': tokens.push_back({TokenType::Dot,      '.', {}, 0, -1}); break;
+                case '.': tokens.push_back({TokenType::Dot,         '.', {}, 0, -1}); break;
+                case '^': tokens.push_back({TokenType::AnchorStart, '^', {}, 0, -1}); break;
+                case '$': tokens.push_back({TokenType::AnchorEnd,   '$', {}, 0, -1}); break;
 
                 case '\\': {
                     ++it;

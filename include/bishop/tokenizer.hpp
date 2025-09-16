@@ -11,7 +11,8 @@ namespace tokenizer {
 
 enum class TokenType {
     Literal, Union, Star, Plus, Question,
-    LParen, RParen, Concat, Dot, CharClass, Repeat, Unknown
+    LParen, RParen, Concat, Dot, CharClass, Repeat,
+    AnchorStart, AnchorEnd, Unknown
 };
 
 struct Token {
@@ -20,6 +21,11 @@ struct Token {
     std::vector<bool> char_set;
     int               repeat_min{0};
     int               repeat_max{-1};
+};
+
+struct AnchorInfo {
+    bool start;
+    bool end;
 };
 
 constexpr int precedence_of(TokenType t) {
@@ -36,19 +42,29 @@ constexpr int precedence_of(TokenType t) {
 
 inline std::string to_string(const TokenType t) {
     switch (t) {
-        case TokenType::Literal:   return "Literal";
-        case TokenType::Plus:      return "Plus";
-        case TokenType::Star:      return "Star";
-        case TokenType::Question:  return "Question";
-        case TokenType::LParen:    return "LParen";
-        case TokenType::RParen:    return "RParen";
-        case TokenType::Union:     return "Union";
-        case TokenType::Concat:    return "Concat";
-        case TokenType::Dot:       return "Dot";
-        case TokenType::CharClass: return "CharClass";
-        case TokenType::Repeat:    return "Repeat";
-        default:                   return "Unknown";
+        case TokenType::Literal:     return "Literal";
+        case TokenType::Plus:        return "Plus";
+        case TokenType::Star:        return "Star";
+        case TokenType::Question:    return "Question";
+        case TokenType::LParen:      return "LParen";
+        case TokenType::RParen:      return "RParen";
+        case TokenType::Union:       return "Union";
+        case TokenType::Concat:      return "Concat";
+        case TokenType::Dot:         return "Dot";
+        case TokenType::CharClass:   return "CharClass";
+        case TokenType::Repeat:      return "Repeat";
+        case TokenType::AnchorStart: return "AnchorStart";
+        case TokenType::AnchorEnd:   return "AnchorEnd";
+        default:                     return "Unknown";
     }
+}
+
+inline AnchorInfo strip_anchors(std::vector<Token>& toks) {
+    bool s = !toks.empty() && toks.front().type == TokenType::AnchorStart;
+    bool e = !toks.empty() && toks.back().type  == TokenType::AnchorEnd;
+    if (s) toks.erase(toks.begin());
+    if (e) toks.pop_back();
+    return {s, e};
 }
 
 std::vector<Token> tokenize(const std::string& s);

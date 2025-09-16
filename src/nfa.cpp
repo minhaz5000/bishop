@@ -130,13 +130,11 @@ NFA parse_postfix(const std::vector<Token>& postfix)
             }
             default:
                 std::cerr << "unknown token\n";
-                exit(EXIT_FAILURE);
         }
     }
 
     if (st.size() != 1) {
         std::cerr << "invalid postfix\n";
-        exit(EXIT_FAILURE);
     }
 
     return st.top();
