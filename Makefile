@@ -1,18 +1,28 @@
 CXX      := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -I include
 
-SRCS     := src/tokenizer.cpp src/nfa.cpp
-OBJS     := $(patsubst %.cpp,%.o,$(SRCS))
+LIB_SRCS := src/tokenizer.cpp src/nfa.cpp src/utils.cpp
+LIB_OBJS := $(patsubst %.cpp,%.o,$(LIB_SRCS))
 
-.PHONY: all clean
+TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \
+             tests/test_nfa.cpp  tests/test_errors.cpp
+TEST_OBJS := $(patsubst %.cpp,%.o,$(TEST_SRCS))
+
+.PHONY: all clean test bench
 
 all: libbishop.a
 
-libbishop.a: $(OBJS)
-	ar rcs $@ $^
+libbishop.a: $(LIB_OBJS)
+    ar rcs $@ $^
+
+bishop_tests: libbishop.a $(TEST_OBJS)
+    $(CXX) $(CXXFLAGS) -o $@ $(TEST_OBJS) -L. -lbishop
+
+test: bishop_tests
+    ./bishop_tests
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+    $(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) libbishop.a
+    rm -f $(LIB_OBJS) $(TEST_OBJS) libbishop.a bishop_tests
