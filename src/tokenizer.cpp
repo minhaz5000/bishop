@@ -1,3 +1,4 @@
+#include "bishop/error.hpp"
 #include "bishop/tokenizer.hpp"
 
 #include <cctype>
