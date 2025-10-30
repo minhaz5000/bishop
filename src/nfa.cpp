@@ -1,6 +1,6 @@
+#include "bishop/error.hpp"
 #include "bishop/nfa.hpp"
 
-#include <cstdlib>
 #include <set>
 #include <stack>
 #include <unordered_map>
