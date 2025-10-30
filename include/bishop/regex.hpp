@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "bishop/error.hpp"
 #include "bishop/nfa.hpp"
 #include "bishop/tokenizer.hpp"
 
@@ -17,14 +18,23 @@ public:
     explicit Regex(const std::string& pattern) { compile(pattern); }
 
     void compile(const std::string& pattern) {
-        auto tokens        = tokenizer::tokenize(pattern);
-        auto [anc_s, anc_e] = tokenizer::strip_anchors(tokens);
-        anchored_start_    = anc_s;
-        anchored_end_      = anc_e;
-        tokens             = tokenizer::insert_concats(tokens);
-        auto postfix       = tokenizer::to_postfix(tokens);
-        nfa_               = nfa::parse_postfix(postfix);
+        try {
+            auto tokens          = tokenizer::tokenize(pattern);
+            auto [anc_s, anc_e]  = tokenizer::strip_anchors(tokens);
+            anchored_start_      = anc_s;
+            anchored_end_        = anc_e;
+            tokens               = tokenizer::insert_concats(tokens);
+            auto postfix         = tokenizer::to_postfix(tokens);
+            nfa_                 = nfa::parse_postfix(postfix);
+            pattern_             = pattern;
+        } catch (const RegexError&) {
+            throw;
+        } catch (const std::exception& e) {
+            throw CompileError(std::string("unexpected error: ") + e.what());
+        }
     }
+
+    const std::string& pattern() const noexcept { return pattern_; }
 
     bool match(const std::string& text) {
         return nfa::nfa_match(nfa_, text);
@@ -87,9 +97,10 @@ public:
     bool anchored_end()   const { return anchored_end_; }
 
 private:
-    nfa::NFA nfa_{nullptr, nullptr};
-    bool     anchored_start_{false};
-    bool     anchored_end_{false};
+    nfa::NFA    nfa_{nullptr, nullptr};
+    bool        anchored_start_{false};
+    bool        anchored_end_{false};
+    std::string pattern_;
 };
 
 }  // namespace bishop
