@@ -70,3 +70,14 @@ DFA nfa_to_dfa(nfa::NFA& n) {
     return d;
 }
 
+bool dfa_match(const DFA& d, const std::string& input) {
+    if (!d.valid || d.states.empty()) return false;
+    int cur = d.start;
+    for (unsigned char c : input) {
+        auto it = d.states[cur].transitions.find(c);
+        if (it == d.states[cur].transitions.end()) return false;
+        cur = it->second;
+    }
+    return d.states[cur].is_accept;
+}
+
