@@ -81,3 +81,54 @@ bool dfa_match(const DFA& d, const std::string& input) {
     return d.states[cur].is_accept;
 }
 
+DFA minimize(const DFA& d) {
+    int n = static_cast<int>(d.states.size());
+    if (n == 0) return d;
+
+    std::vector<int> cls(n);
+    for (int i = 0; i < n; ++i)
+        cls[i] = d.states[i].is_accept ? 1 : 0;
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        std::map<std::vector<int>, int> sig_map;
+        std::vector<int> next_cls(n);
+        int counter = 0;
+
+        for (int i = 0; i < n; ++i) {
+            std::vector<int> sig;
+            sig.reserve(257);
+            sig.push_back(cls[i]);
+            for (int c = 0; c < 256; ++c) {
+                auto it = d.states[i].transitions.find(static_cast<unsigned char>(c));
+                sig.push_back(it != d.states[i].transitions.end()
+                              ? cls[it->second] : -1);
+            }
+            auto jt = sig_map.find(sig);
+            if (jt == sig_map.end())
+                sig_map[sig] = next_cls[i] = counter++;
+            else
+                next_cls[i] = jt->second;
+        }
+
+        if (next_cls != cls) { cls = std::move(next_cls); changed = true; }
+    }
+
+    int num = *std::max_element(cls.begin(), cls.end()) + 1;
+    DFA result;
+    result.states.resize(num);
+    result.start = cls[d.start];
+    result.valid = d.valid;
+
+    for (int i = 0; i < n; ++i) {
+        int c = cls[i];
+        result.states[c].id        = c;
+        result.states[c].is_accept = d.states[i].is_accept;
+        for (auto& [ch, dst] : d.states[i].transitions)
+            result.states[c].transitions[ch] = cls[dst];
+    }
+    return result;
+}
+
+}  // namespace dfa
