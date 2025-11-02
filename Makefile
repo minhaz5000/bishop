@@ -1,7 +1,7 @@
 CXX      := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -I include
 
-LIB_SRCS := src/tokenizer.cpp src/nfa.cpp src/utils.cpp
+LIB_SRCS := src/tokenizer.cpp src/nfa.cpp src/utils.cpp src/dfa.cpp
 LIB_OBJS := $(patsubst %.cpp,%.o,$(LIB_SRCS))
 
 TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \

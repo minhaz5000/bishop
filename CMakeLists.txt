@@ -26,6 +26,7 @@ set(BISHOP_SOURCES
     src/tokenizer.cpp
     src/nfa.cpp
     src/utils.cpp
+    src/dfa.cpp
 )
 
 add_library(bishop_core STATIC ${BISHOP_SOURCES})
