@@ -38,6 +38,7 @@ if(BISHOP_BUILD_TESTS)
         tests/test_main.cpp
         tests/test_tokenizer.cpp
         tests/test_nfa.cpp
+        tests/test_dfa.cpp
     )
     target_link_libraries(bishop_tests PRIVATE bishop_core)
     add_test(NAME bishop_tests COMMAND bishop_tests)
