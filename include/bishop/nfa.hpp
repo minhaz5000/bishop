@@ -33,6 +33,7 @@ NFA create_nfa_union(int& id, NFA first, NFA second);
 NFA create_nfa_kleene_star(int& id, NFA first);
 NFA create_nfa_plus(int& id, NFA first);
 NFA create_nfa_question(int& id, NFA first);
+NFA create_nfa_group(int& id, NFA inner, int group_idx);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);

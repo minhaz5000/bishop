@@ -77,6 +77,20 @@ NFA create_nfa_repeat(int& id, const NFA& base, int min_rep, int max_rep)
     return result;
 }
 
+
+NFA create_nfa_group(int& id, NFA inner, int group_idx)
+{
+    State* open  = new State{id++, false};
+    State* close = new State{id++, false};
+    open->group_start  = group_idx;
+    close->group_end   = group_idx;
+    open->epsilon.push_back(inner.start);
+    inner.end->is_accept = false;
+    inner.end->epsilon.push_back(close);
+    close->epsilon.push_back(inner.end);
+    return {open, inner.end};
+}
+
 NFA parse_postfix(const std::vector<Token>& postfix)
 {
     if (postfix.empty()) return NFA{nullptr, nullptr};
