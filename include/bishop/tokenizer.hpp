@@ -12,7 +12,13 @@ namespace tokenizer {
 enum class TokenType {
     Literal, Union, Star, Plus, Question,
     LParen, RParen, Concat, Dot, CharClass, Repeat,
-    AnchorStart, AnchorEnd, Unknown
+    AnchorStart, AnchorEnd,
+    GroupStart, GroupEnd, NamedGroup, Unknown
+};
+
+struct GroupInfo {
+    int         index{-1};
+    std::string name;
 };
 
 struct Token {
@@ -21,6 +27,7 @@ struct Token {
     std::vector<bool> char_set;
     int               repeat_min{0};
     int               repeat_max{-1};
+    GroupInfo         group;
 };
 
 struct AnchorInfo {
@@ -55,6 +62,9 @@ inline std::string to_string(const TokenType t) {
         case TokenType::Repeat:      return "Repeat";
         case TokenType::AnchorStart: return "AnchorStart";
         case TokenType::AnchorEnd:   return "AnchorEnd";
+        case TokenType::GroupStart: return "GroupStart";
+        case TokenType::GroupEnd:   return "GroupEnd";
+        case TokenType::NamedGroup: return "NamedGroup";
         default:                     return "Unknown";
     }
 }
