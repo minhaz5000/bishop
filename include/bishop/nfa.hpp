@@ -15,6 +15,8 @@ struct State {
     std::unordered_map<char, State*> transitions;
     std::vector<State*> epsilon;
     State* any_transition{nullptr};
+    int    group_start{-1};
+    int    group_end{-1};
 };
 
 struct NFA {
@@ -35,6 +37,11 @@ NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);
 bool nfa_match(NFA& nfa, const std::string& input);
+
+struct SimThread {
+    State*                   state;
+    std::vector<std::pair<size_t,size_t>> captures;
+};
 
 }  // namespace nfa
 #endif
