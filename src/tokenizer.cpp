@@ -64,7 +64,40 @@ std::vector<Token> tokenize(const std::string& s)
                 case '*': tokens.push_back({TokenType::Star,     '*', {}, 0, -1}); break;
                 case '?': tokens.push_back({TokenType::Question, '?', {}, 0, -1}); break;
                 case '|': tokens.push_back({TokenType::Union,    '|', {}, 0, -1}); break;
-                case '(': tokens.push_back({TokenType::LParen,   '(', {}, 0, -1}); break;
+                case '(': {
+                    auto peek = it + 1;
+                    if (peek != s.cend() && *peek == '?') {
+                        auto peek2 = peek + 1;
+                        if (peek2 != s.cend() && *peek2 == ':') {
+                            tokens.push_back({TokenType::LParen, '(', {}, 0, -1});
+                            it = peek2;
+                        } else if (peek2 != s.cend() && *peek2 == 'P') {
+                            auto peek3 = peek2 + 1;
+                            if (peek3 != s.cend() && *peek3 == '<') {
+                                ++peek3;
+                                std::string gname;
+                                while (peek3 != s.cend() && *peek3 != '>')
+                                    { gname += *peek3; ++peek3; }
+                                Token tok;
+                                tok.type       = TokenType::NamedGroup;
+                                tok.value      = '(';
+                                tok.group.name = gname;
+                                tokens.push_back(std::move(tok));
+                                it = peek3;
+                            } else {
+                                tokens.push_back({TokenType::LParen, '(', {}, 0, -1});
+                            }
+                        } else {
+                            tokens.push_back({TokenType::LParen, '(', {}, 0, -1});
+                        }
+                    } else {
+                        Token tok;
+                        tok.type        = TokenType::GroupStart;
+                        tok.value       = '(';
+                        tokens.push_back(std::move(tok));
+                    }
+                    break;
+                }
                 case ')': tokens.push_back({TokenType::RParen,   ')', {}, 0, -1}); break;
                 case '.': tokens.push_back({TokenType::Dot,         '.', {}, 0, -1}); break;
                 case '^': tokens.push_back({TokenType::AnchorStart, '^', {}, 0, -1}); break;
