@@ -1,3 +1,4 @@
+#include "bishop/flags.hpp"
 #ifndef NFA_H_
 #define NFA_H_
 
@@ -37,7 +38,8 @@ NFA create_nfa_group(int& id, NFA inner, int group_idx);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);
-bool nfa_match(NFA& nfa, const std::string& input);
+bool nfa_match(NFA& nfa, const std::string& input,
+               bishop::Flag flags = bishop::Flag::NONE);
 
 struct SimThread {
     State*                   state;

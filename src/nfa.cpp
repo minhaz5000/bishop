@@ -1,3 +1,4 @@
+#include "bishop/flags.hpp"
 #include "bishop/error.hpp"
 #include "bishop/nfa.hpp"
 
@@ -170,17 +171,18 @@ std::set<State*> epsilon_closure(const std::set<State*>& states)
     return closure;
 }
 
-bool nfa_match(NFA& nfa, const std::string& input)
+bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags)
 {
     std::set<State*> current = epsilon_closure({nfa.start});
 
     for (char c : input) {
         std::set<State*> next;
+        bool dotall = bishop::has_flag(flags, bishop::Flag::DOTALL);
         for (State* s : current) {
             auto it = s->transitions.find(c);
             if (it != s->transitions.end())
                 next.insert(it->second);
-            if (s->any_transition)
+            if (s->any_transition && (dotall || c != '\n'))
                 next.insert(s->any_transition);
         }
         current = epsilon_closure(next);
