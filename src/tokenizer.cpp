@@ -1,5 +1,6 @@
 #include "bishop/error.hpp"
 #include "bishop/tokenizer.hpp"
+#include "bishop/flags.hpp"
 
 #include <cctype>
 #include <stack>
@@ -45,16 +46,24 @@ static std::vector<bool> cs_space() {
     return cs_set({' ', '\t', '\n', '\r', '\f', '\v'});
 }
 
-std::vector<Token> tokenize(const std::string& s)
+std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
 {
     if (s.empty()) return {};
 
     std::vector<Token> tokens;
     tokens.reserve(s.size());
 
+    bool extended = bishop::has_flag(flags, bishop::Flag::EXTENDED);
     auto it = s.cbegin();
     while (it != s.cend()) {
         unsigned char ch = static_cast<unsigned char>(*it);
+        if (extended) {
+            if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') { ++it; continue; }
+            if (ch == '#') {
+                while (it != s.cend() && *it != '\n') ++it;
+                continue;
+            }
+        }
 
         if (std::isalnum(ch)) {
             tokens.push_back({TokenType::Literal, (char)ch, {}, 0, -1});

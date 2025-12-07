@@ -1,3 +1,4 @@
+#include "bishop/flags.hpp"
 #ifndef TOKENIZER_H_
 #define TOKENIZER_H_
 
@@ -77,7 +78,8 @@ inline AnchorInfo strip_anchors(std::vector<Token>& toks) {
     return {s, e};
 }
 
-std::vector<Token> tokenize(const std::string& s);
+std::vector<Token> tokenize(const std::string& s,
+                             bishop::Flag flags = bishop::Flag::NONE);
 std::vector<Token> insert_concats(const std::vector<Token>& s);
 std::vector<Token> to_postfix(const std::vector<Token>& s);
 
