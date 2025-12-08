@@ -80,6 +80,7 @@ inline AnchorInfo strip_anchors(std::vector<Token>& toks) {
 
 std::vector<Token> tokenize(const std::string& s,
                              bishop::Flag flags = bishop::Flag::NONE);
+void               apply_ignorecase(std::vector<Token>& tokens);
 std::vector<Token> insert_concats(const std::vector<Token>& s);
 std::vector<Token> to_postfix(const std::vector<Token>& s);
 

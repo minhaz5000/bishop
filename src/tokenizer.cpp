@@ -204,6 +204,30 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
     return tokens;
 }
 
+static void apply_ignorecase(std::vector<Token>& tokens) {
+    for (auto& tok : tokens) {
+        if (tok.type == TokenType::Literal) {
+            unsigned char lo = static_cast<unsigned char>(std::tolower((unsigned char)tok.value));
+            unsigned char up = static_cast<unsigned char>(std::toupper((unsigned char)tok.value));
+            if (lo != up) {
+                tok.char_set.assign(256, false);
+                tok.char_set[lo] = true;
+                tok.char_set[up] = true;
+                tok.type  = TokenType::CharClass;
+                tok.value = 0;
+            }
+        } else if (tok.type == TokenType::CharClass) {
+            std::vector<bool> extra(256, false);
+            for (int i = 0; i < 256; ++i) {
+                if (!tok.char_set[i]) continue;
+                extra[std::tolower(i)] = true;
+                extra[std::toupper(i)] = true;
+            }
+            tok.char_set = extra;
+        }
+    }
+}
+
 std::vector<Token> insert_concats(const std::vector<Token>& s)
 {
     if (s.empty()) return {};
