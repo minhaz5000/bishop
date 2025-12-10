@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "bishop/error.hpp"
+#include "bishop/flags.hpp"
 #include "bishop/nfa.hpp"
 #include "bishop/tokenizer.hpp"
 
@@ -15,14 +16,19 @@ class Regex {
 public:
     Regex() = default;
 
-    explicit Regex(const std::string& pattern) { compile(pattern); }
+    explicit Regex(const std::string& pattern, Flag flags = Flag::NONE) {
+        compile(pattern, flags);
+    }
 
-    void compile(const std::string& pattern) {
+    void compile(const std::string& pattern, Flag flags = Flag::NONE) {
         try {
-            auto tokens          = tokenizer::tokenize(pattern);
+            flags_   = flags;
+            auto tokens          = tokenizer::tokenize(pattern, flags);
             auto [anc_s, anc_e]  = tokenizer::strip_anchors(tokens);
             anchored_start_      = anc_s;
             anchored_end_        = anc_e;
+            if (has_flag(flags, Flag::IGNORECASE))
+                tokenizer::apply_ignorecase(tokens);
             tokens               = tokenizer::insert_concats(tokens);
             auto postfix         = tokenizer::to_postfix(tokens);
             nfa_                 = nfa::parse_postfix(postfix);
@@ -34,20 +40,16 @@ public:
         }
     }
 
-    const std::string& pattern() const noexcept { return pattern_; }
-
     bool match(const std::string& text) {
-        return nfa::nfa_match(nfa_, text);
+        return nfa::nfa_match(nfa_, text, flags_);
     }
 
     std::pair<size_t, size_t> search(const std::string& text) {
-        size_t start_lo = 0;
         size_t start_hi = anchored_start_ ? 1 : text.size() + 1;
-
-        for (size_t i = start_lo; i < start_hi; ++i) {
+        for (size_t i = 0; i < start_hi; ++i) {
             size_t j_lo = anchored_end_ ? text.size() : i;
             for (size_t j = j_lo; j <= text.size(); ++j) {
-                if (nfa::nfa_match(nfa_, text.substr(i, j - i)))
+                if (nfa::nfa_match(nfa_, text.substr(i, j - i), flags_))
                     return {i, j};
             }
         }
@@ -60,7 +62,7 @@ public:
         while (pos <= text.size()) {
             bool found = false;
             for (size_t j = text.size(); j >= pos; --j) {
-                if (nfa::nfa_match(nfa_, text.substr(pos, j - pos))) {
+                if (nfa::nfa_match(nfa_, text.substr(pos, j - pos), flags_)) {
                     results.push_back({pos, j});
                     pos = (j == pos) ? j + 1 : j;
                     found = true;
@@ -93,11 +95,14 @@ public:
         return result;
     }
 
-    bool anchored_start() const { return anchored_start_; }
-    bool anchored_end()   const { return anchored_end_; }
+    const std::string& pattern()  const noexcept { return pattern_; }
+    Flag               flags()    const noexcept { return flags_; }
+    bool anchored_start()         const noexcept { return anchored_start_; }
+    bool anchored_end()           const noexcept { return anchored_end_; }
 
 private:
     nfa::NFA    nfa_{nullptr, nullptr};
+    Flag        flags_{Flag::NONE};
     bool        anchored_start_{false};
     bool        anchored_end_{false};
     std::string pattern_;
