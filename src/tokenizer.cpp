@@ -1,6 +1,7 @@
 #include "bishop/error.hpp"
 #include "bishop/tokenizer.hpp"
 #include "bishop/flags.hpp"
+#include "bishop/posix.hpp"
 
 #include <cctype>
 #include <stack>
@@ -152,6 +153,17 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
 
                     bool in_class[256] = {};
                     while (it != s.cend() && *it != ']') {
+                        if (*it == '[' && (it + 1) != s.cend() && *(it + 1) == ':') {
+                            it += 2;
+                            std::string pname;
+                            while (it != s.cend() && *it != ':') { pname += *it; ++it; }
+                            if (it != s.cend()) ++it;
+                            if (it != s.cend() && *it == ']') ++it;
+                            auto pcls = bishop::posix::from_name(pname);
+                            for (int pi = 0; pi < 256; ++pi)
+                                if (pcls[pi]) in_class[pi] = true;
+                            continue;
+                        }
                         unsigned char c = static_cast<unsigned char>(*it);
                         ++it;
                         if (it != s.cend() && *it == '-' &&
