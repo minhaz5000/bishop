@@ -135,6 +135,8 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
                         case 's':
                             tokens.push_back(make_charclass(cs_space()));
                             break;
+                        case 'b': tokens.push_back({TokenType::WordBoundary,    'b', {}, 0, -1}); break;
+                        case 'B': tokens.push_back({TokenType::NonWordBoundary, 'B', {}, 0, -1}); break;
                         case 'n': tokens.push_back({TokenType::Literal, '\n', {}, 0, -1}); break;
                         case 't': tokens.push_back({TokenType::Literal, '\t', {}, 0, -1}); break;
                         case 'r': tokens.push_back({TokenType::Literal, '\r', {}, 0, -1}); break;

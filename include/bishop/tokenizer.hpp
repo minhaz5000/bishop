@@ -14,7 +14,8 @@ enum class TokenType {
     Literal, Union, Star, Plus, Question,
     LParen, RParen, Concat, Dot, CharClass, Repeat,
     AnchorStart, AnchorEnd,
-    GroupStart, GroupEnd, NamedGroup, Unknown
+    GroupStart, GroupEnd, NamedGroup,
+    WordBoundary, NonWordBoundary, Unknown
 };
 
 struct GroupInfo {
@@ -65,7 +66,9 @@ inline std::string to_string(const TokenType t) {
         case TokenType::AnchorEnd:   return "AnchorEnd";
         case TokenType::GroupStart: return "GroupStart";
         case TokenType::GroupEnd:   return "GroupEnd";
-        case TokenType::NamedGroup: return "NamedGroup";
+        case TokenType::NamedGroup:       return "NamedGroup";
+        case TokenType::WordBoundary:    return "WordBoundary";
+        case TokenType::NonWordBoundary: return "NonWordBoundary";
         default:                     return "Unknown";
     }
 }
