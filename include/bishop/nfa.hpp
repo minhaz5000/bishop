@@ -10,14 +10,17 @@
 
 namespace nfa {
 
+enum class BoundaryType { None, WordBoundary, NonWordBoundary };
+
 struct State {
     int id;
     bool is_accept;
     std::unordered_map<char, State*> transitions;
     std::vector<State*> epsilon;
     State* any_transition{nullptr};
-    int    group_start{-1};
-    int    group_end{-1};
+    int          group_start{-1};
+    int          group_end{-1};
+    BoundaryType boundary{BoundaryType::None};
 };
 
 struct NFA {
