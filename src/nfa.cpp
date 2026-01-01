@@ -171,6 +171,26 @@ std::set<State*> epsilon_closure(const std::set<State*>& states)
     return closure;
 }
 
+static bool is_word(char c) {
+    return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
+}
+
+static std::set<State*> boundary_filter(const std::set<State*>& states,
+                                        char prev, char curr_c)
+{
+    std::set<State*> result;
+    bool prev_word = is_word(prev);
+    bool curr_word = is_word(curr_c);
+    bool at_boundary = prev_word != curr_word;
+
+    for (State* s : states) {
+        if (s->boundary == BoundaryType::WordBoundary && !at_boundary) continue;
+        if (s->boundary == BoundaryType::NonWordBoundary && at_boundary) continue;
+        result.insert(s);
+    }
+    return result;
+}
+
 bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags)
 {
     std::set<State*> current = epsilon_closure({nfa.start});
