@@ -107,6 +107,18 @@ NFA parse_postfix(const std::vector<Token>& postfix)
             case TokenType::Dot:
                 st.push(create_nfa_dot(state_count));
                 break;
+            case TokenType::WordBoundary: {
+                State* s = new State{state_count++, true};
+                s->boundary = BoundaryType::WordBoundary;
+                st.push(NFA{s, s});
+                break;
+            }
+            case TokenType::NonWordBoundary: {
+                State* s = new State{state_count++, true};
+                s->boundary = BoundaryType::NonWordBoundary;
+                st.push(NFA{s, s});
+                break;
+            }
             case TokenType::CharClass:
                 st.push(create_nfa_charclass(state_count, tok.char_set));
                 break;
