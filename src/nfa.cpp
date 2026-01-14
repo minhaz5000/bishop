@@ -315,3 +315,39 @@ NFA create_nfa_concat(int& id, NFA first, NFA second)
 }
 
 }  // namespace nfa
+
+NFA create_nfa_lazy_star(int& id, NFA first)
+{
+    State* start = new State{id++, false};
+    State* end   = new State{id++, true};
+    start->epsilon.push_back(end);
+    start->epsilon.push_back(first.start);
+    first.end->is_accept = false;
+    first.end->epsilon.push_back(end);
+    first.end->epsilon.push_back(first.start);
+    return {start, end};
+}
+
+NFA create_nfa_lazy_plus(int& id, NFA first)
+{
+    State* start = new State{id++, false};
+    State* end   = new State{id++, true};
+    start->epsilon.push_back(first.start);
+    first.end->is_accept = false;
+    first.end->epsilon.push_back(end);
+    first.end->epsilon.push_back(first.start);
+    return {start, end};
+}
+
+NFA create_nfa_lazy_question(int& id, NFA first)
+{
+    State* start = new State{id++, false};
+    State* end   = new State{id++, true};
+    start->epsilon.push_back(end);
+    start->epsilon.push_back(first.start);
+    first.end->is_accept = false;
+    first.end->epsilon.push_back(end);
+    return {start, end};
+}
+
+}  // namespace nfa
