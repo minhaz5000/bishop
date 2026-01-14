@@ -15,7 +15,7 @@ enum class TokenType {
     LParen, RParen, Concat, Dot, CharClass, Repeat,
     AnchorStart, AnchorEnd,
     GroupStart, GroupEnd, NamedGroup,
-    WordBoundary, NonWordBoundary, Unknown
+    WordBoundary, NonWordBoundary, Lazy, Unknown
 };
 
 struct GroupInfo {
@@ -69,6 +69,7 @@ inline std::string to_string(const TokenType t) {
         case TokenType::NamedGroup:       return "NamedGroup";
         case TokenType::WordBoundary:    return "WordBoundary";
         case TokenType::NonWordBoundary: return "NonWordBoundary";
+        case TokenType::Lazy:            return "Lazy";
         default:                     return "Unknown";
     }
 }
