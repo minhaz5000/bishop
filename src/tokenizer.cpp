@@ -70,8 +70,22 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
             tokens.push_back({TokenType::Literal, (char)ch, {}, 0, -1});
         } else {
             switch (ch) {
-                case '+': tokens.push_back({TokenType::Plus,     '+', {}, 0, -1}); break;
-                case '*': tokens.push_back({TokenType::Star,     '*', {}, 0, -1}); break;
+                case +: {
+                    tokens.push_back({TokenType::Plus, '+', {}, 0, -1});
+                    if ((it + 1) != s.cend() && *(it + 1) == '?') {
+                        ++it;
+                        tokens.push_back({TokenType::Lazy, '?', {}, 0, -1});
+                    }
+                    break;
+                }
+                case *: {
+                    tokens.push_back({TokenType::Star, '*', {}, 0, -1});
+                    if ((it + 1) != s.cend() && *(it + 1) == '?') {
+                        ++it;
+                        tokens.push_back({TokenType::Lazy, '?', {}, 0, -1});
+                    }
+                    break;
+                }
                 case '?': tokens.push_back({TokenType::Question, '?', {}, 0, -1}); break;
                 case '|': tokens.push_back({TokenType::Union,    '|', {}, 0, -1}); break;
                 case '(': {
@@ -207,6 +221,10 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
                     tok.type = TokenType::Repeat; tok.value = '{';
                     tok.repeat_min = mn; tok.repeat_max = mx;
                     tokens.push_back(std::move(tok));
+                    if (it != s.cend() && *it == '?') {
+                        ++it;
+                        tokens.push_back({TokenType::Lazy, '?', {}, 0, -1});
+                    }
                     break;
                 }
 
