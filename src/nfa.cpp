@@ -143,6 +143,18 @@ NFA parse_postfix(const std::vector<Token>& postfix)
                                           tok.repeat_min, tok.repeat_max));
                 break;
             }
+            case TokenType::Lazy: {
+                if (!st.empty()) {
+                    NFA top = st.top(); st.pop();
+                    if (!st.empty()) {
+                        NFA base = st.top(); st.pop();
+                        st.push(create_nfa_lazy_star(state_count, base));
+                    } else {
+                        st.push(create_nfa_lazy_star(state_count, top));
+                    }
+                }
+                break;
+            }
             case TokenType::Union: {
                 NFA second = st.top(); st.pop();
                 NFA first  = st.top(); st.pop();
