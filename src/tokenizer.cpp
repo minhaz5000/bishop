@@ -95,6 +95,12 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
                         if (peek2 != s.cend() && *peek2 == ':') {
                             tokens.push_back({TokenType::LParen, '(', {}, 0, -1});
                             it = peek2;
+                        } else if (peek2 != s.cend() && *peek2 == '=') {
+                            tokens.push_back({TokenType::Lookahead,    '(', {}, 0, -1});
+                            it = peek2;
+                        } else if (peek2 != s.cend() && *peek2 == '!') {
+                            tokens.push_back({TokenType::NegLookahead, '(', {}, 0, -1});
+                            it = peek2;
                         } else if (peek2 != s.cend() && *peek2 == 'P') {
                             auto peek3 = peek2 + 1;
                             if (peek3 != s.cend() && *peek3 == '<') {
