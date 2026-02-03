@@ -11,6 +11,7 @@
 namespace nfa {
 
 enum class BoundaryType { None, WordBoundary, NonWordBoundary };
+enum class LookType    { None, Ahead, NegAhead };
 
 struct State {
     int id;
@@ -21,6 +22,8 @@ struct State {
     int          group_start{-1};
     int          group_end{-1};
     BoundaryType boundary{BoundaryType::None};
+    LookType     look{LookType::None};
+    NFA*         look_nfa{nullptr};
 };
 
 struct NFA {
@@ -38,6 +41,7 @@ NFA create_nfa_kleene_star(int& id, NFA first);
 NFA create_nfa_plus(int& id, NFA first);
 NFA create_nfa_question(int& id, NFA first);
 NFA create_nfa_group(int& id, NFA inner, int group_idx);
+NFA create_nfa_lookahead(int& id, NFA inner, bool negative);
 NFA create_nfa_lazy_star(int& id, NFA first);
 NFA create_nfa_lazy_plus(int& id, NFA first);
 NFA create_nfa_lazy_question(int& id, NFA first);

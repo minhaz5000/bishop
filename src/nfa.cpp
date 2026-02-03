@@ -143,6 +143,16 @@ NFA parse_postfix(const std::vector<Token>& postfix)
                                           tok.repeat_min, tok.repeat_max));
                 break;
             }
+            case TokenType::Lookahead: {
+                NFA inner = st.top(); st.pop();
+                st.push(create_nfa_lookahead(state_count, inner, false));
+                break;
+            }
+            case TokenType::NegLookahead: {
+                NFA inner = st.top(); st.pop();
+                st.push(create_nfa_lookahead(state_count, inner, true));
+                break;
+            }
             case TokenType::Lazy: {
                 if (!st.empty()) {
                     NFA top = st.top(); st.pop();
@@ -327,6 +337,15 @@ NFA create_nfa_concat(int& id, NFA first, NFA second)
 }
 
 }  // namespace nfa
+
+NFA create_nfa_lookahead(int& id, NFA inner, bool negative)
+{
+    State* s = new State{id++, true};
+    s->look     = negative ? LookType::NegAhead : LookType::Ahead;
+    s->look_nfa = new NFA{inner.start, inner.end};
+    return {s, s};
+}
+
 
 NFA create_nfa_lazy_star(int& id, NFA first)
 {
