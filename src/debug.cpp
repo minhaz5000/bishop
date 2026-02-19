@@ -96,3 +96,55 @@ void print_nfa_text(const nfa::NFA& n, std::ostream& out)
     }
 }
 
+void print_dfa_dot(const dfa::DFA& d, std::ostream& out,
+                   const std::string& graph_name)
+{
+    out << "digraph " << graph_name << " {\n";
+    out << "  rankdir=LR;\n";
+    out << "  node [shape=circle];\n";
+
+    for (const auto& s : d.states) {
+        if (s.is_accept)
+            out << "  d" << s.id << " [shape=doublecircle label=\"" << s.id << "\"];\n";
+        else
+            out << "  d" << s.id << " [label=\"" << s.id << "\"];\n";
+    }
+
+    out << "  start [shape=point];\n";
+    out << "  start -> d" << d.start << ";\n";
+
+    for (const auto& s : d.states) {
+        std::unordered_map<int, std::string> edge_labels;
+        for (auto& [ch, dst] : s.transitions) {
+            edge_labels[dst] += utils::escape_for_display(ch);
+            if (edge_labels[dst].size() > 6)
+                edge_labels[dst] = edge_labels[dst].substr(0, 6) + "…";
+        }
+        for (auto& [dst, label] : edge_labels)
+            out << "  d" << s.id << " -> d" << dst
+                << " [label=\"" << label << "\"];\n";
+    }
+    out << "}\n";
+}
+
+std::string dfa_to_dot(const dfa::DFA& d, const std::string& graph_name)
+{
+    std::ostringstream oss;
+    print_dfa_dot(d, oss, graph_name);
+    return oss.str();
+}
+
+void print_dfa_text(const dfa::DFA& d, std::ostream& out)
+{
+    out << "DFA: " << d.states.size() << " states  start=" << d.start << "\n";
+    for (const auto& s : d.states) {
+        out << "  [" << s.id << "]"
+            << (s.is_accept ? " ACCEPT" : "")
+            << (s.id == d.start ? " START" : "") << "\n";
+        for (auto& [ch, dst] : s.transitions)
+            out << "    --" << utils::escape_for_display(ch) << "--> " << dst << "\n";
+    }
+}
+
+}  // namespace debug
+}  // namespace bishop
