@@ -12,7 +12,8 @@ TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \
              tests/test_posix.cpp \
              tests/test_boundaries.cpp \
              tests/test_lazy.cpp \
-             tests/test_lookahead.cpp
+             tests/test_lookahead.cpp \
+             tests/test_debug.cpp
 TEST_OBJS := $(patsubst %.cpp,%.o,$(TEST_SRCS))
 
 .PHONY: all clean test bench
