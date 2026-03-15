@@ -72,3 +72,63 @@ dfa::DFA deserialize_dfa(std::istream& in)
     return d;
 }
 
+void serialize_dfa_text(const dfa::DFA& d, std::ostream& out)
+{
+    out << "BISHOP_DFA " << VERSION << "\n";
+    out << "states "  << d.states.size() << "\n";
+    out << "start "   << d.start << "\n";
+    out << "valid "   << (d.valid ? 1 : 0) << "\n";
+
+    for (const auto& s : d.states) {
+        out << "state " << s.id << " " << (s.is_accept ? 1 : 0) << "\n";
+        out << "trans " << s.transitions.size() << "\n";
+        for (auto& [ch, dst] : s.transitions)
+            out << "  " << static_cast<int>(static_cast<uint8_t>(ch))
+                << " " << dst << "\n";
+    }
+    out << "END\n";
+}
+
+dfa::DFA deserialize_dfa_text(std::istream& in)
+{
+    std::string tag;
+    in >> tag;
+    if (tag != "BISHOP_DFA")
+        throw RegexError("text serializer: missing header");
+
+    uint16_t ver; in >> ver;
+    if (ver != VERSION)
+        throw RegexError("text serializer: unsupported version");
+
+    dfa::DFA d;
+    size_t nstates = 0;
+
+    std::string key;
+    while (in >> key) {
+        if (key == "states")  { in >> nstates; d.states.resize(nstates); }
+        else if (key == "start") { in >> d.start; }
+        else if (key == "valid") { int v; in >> v; d.valid = v != 0; }
+        else if (key == "state") {
+            int id, accept; in >> id >> accept;
+            d.states[id].id        = id;
+            d.states[id].is_accept = accept != 0;
+
+            std::string tk; in >> tk;
+            size_t tc; in >> tc;
+            for (size_t j = 0; j < tc; ++j) {
+                int ch, dst; in >> ch >> dst;
+                d.states[id].transitions[static_cast<uint8_t>(ch)] = dst;
+            }
+        } else if (key == "END") {
+            break;
+        }
+    }
+
+    if (!in && !in.eof())
+        throw RegexError("text serializer: parse error");
+
+    return d;
+}
+
+}  // namespace serial
+}  // namespace bishop
