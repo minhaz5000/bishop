@@ -1,7 +1,7 @@
 CXX      := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -I include
 
-LIB_SRCS := src/tokenizer.cpp src/nfa.cpp src/utils.cpp src/dfa.cpp src/debug.cpp
+LIB_SRCS := src/tokenizer.cpp src/nfa.cpp src/utils.cpp src/dfa.cpp src/debug.cpp src/serializer.cpp
 LIB_OBJS := $(patsubst %.cpp,%.o,$(LIB_SRCS))
 
 TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \
@@ -13,7 +13,8 @@ TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \
              tests/test_boundaries.cpp \
              tests/test_lazy.cpp \
              tests/test_lookahead.cpp \
-             tests/test_debug.cpp
+             tests/test_debug.cpp \
+             tests/test_serial.cpp
 TEST_OBJS := $(patsubst %.cpp,%.o,$(TEST_SRCS))
 
 .PHONY: all clean test bench

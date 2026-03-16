@@ -28,6 +28,7 @@ set(BISHOP_SOURCES
     src/utils.cpp
     src/dfa.cpp
     src/debug.cpp
+    src/serializer.cpp
 )
 
 add_library(bishop_core STATIC ${BISHOP_SOURCES})
