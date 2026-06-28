@@ -5,7 +5,7 @@ LIB_SRCS := src/tokenizer.cpp src/nfa.cpp src/utils.cpp src/dfa.cpp src/debug.cp
 LIB_OBJS := $(patsubst %.cpp,%.o,$(LIB_SRCS))
 
 TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \
-	tests/test_nfa.cpp  tests/test_errors.cpp \
+	tests/test_nfa.cpp tests/test_errors.cpp \
 	tests/test_dfa.cpp \
 	tests/test_groups.cpp \
 	tests/test_flags.cpp \
@@ -15,7 +15,10 @@ TEST_SRCS := tests/test_main.cpp tests/test_tokenizer.cpp \
 	tests/test_lookahead.cpp \
 	tests/test_debug.cpp \
 	tests/test_serial.cpp \
-	tests/test_unicode.cpp
+	tests/test_unicode.cpp \
+	tests/test_match_iterator.cpp \
+	tests/test_exhaustive.cpp
+
 TEST_OBJS := $(patsubst %.cpp,%.o,$(TEST_SRCS))
 
 .PHONY: all clean test bench
