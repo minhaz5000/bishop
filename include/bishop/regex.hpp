@@ -119,6 +119,11 @@ public:
         return anchored_end_;
     }
 
+    nfa::NFA& nfa_ref() noexcept
+    {
+        return nfa_;
+    }
+
 private:
     nfa::NFA nfa_{nullptr, nullptr};
     Flag flags_{Flag::NONE};
