@@ -5,3 +5,4 @@ sanitizers:
 fuzz_targets:
   - regex_fuzzer
   - dfa_fuzzer
+  - lexer_fuzzer

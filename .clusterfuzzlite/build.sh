@@ -6,3 +6,7 @@ $CXX $CXXFLAGS -std=c++17 -I include $LIB_FUZZING_ENGINE \
 
 $CXX $CXXFLAGS -std=c++17 -I include $LIB_FUZZING_ENGINE \
     fuzz/dfa_fuzzer.cc tokenizer.o nfa.o dfa.o utils.o -o $OUT/dfa_fuzzer
+
+$CXX $CXXFLAGS -std=c++17 -I include $LIB_FUZZING_ENGINE \
+    fuzz/lexer_fuzzer.cc tokenizer.o nfa.o dfa.o utils.o debug.o serializer.o \
+    -o $OUT/lexer_fuzzer
