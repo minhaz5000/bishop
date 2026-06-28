@@ -29,6 +29,7 @@ set(BISHOP_SOURCES
     src/dfa.cpp
     src/debug.cpp
     src/serializer.cpp
+    src/unicode.cpp
 )
 
 add_library(bishop_core STATIC ${BISHOP_SOURCES})
@@ -41,6 +42,18 @@ if(BISHOP_BUILD_TESTS)
         tests/test_tokenizer.cpp
         tests/test_nfa.cpp
         tests/test_dfa.cpp
+        tests/test_errors.cpp
+        tests/test_groups.cpp
+        tests/test_flags.cpp
+        tests/test_posix.cpp
+        tests/test_boundaries.cpp
+        tests/test_lazy.cpp
+        tests/test_lookahead.cpp
+        tests/test_debug.cpp
+        tests/test_serial.cpp
+        tests/test_unicode.cpp
+        tests/test_match_iterator.cpp
+        tests/test_exhaustive.cpp
     )
     target_link_libraries(bishop_tests PRIVATE bishop_core)
     add_test(NAME bishop_tests COMMAND bishop_tests)
@@ -49,7 +62,7 @@ endif()
 if(BISHOP_BUILD_BENCH)
     find_package(benchmark QUIET)
     if(benchmark_FOUND)
-        add_executable(bishop_bench bench/benchmark.cpp)
+        add_executable(bishop_bench bench/benchmark.cpp bench/benchmark_extended.cpp)
         target_link_libraries(bishop_bench PRIVATE bishop_core benchmark::benchmark)
     endif()
 endif()
