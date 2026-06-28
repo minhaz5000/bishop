@@ -30,6 +30,13 @@ set(BISHOP_SOURCES
     src/debug.cpp
     src/serializer.cpp
     src/unicode.cpp
+    src/analyzer.cpp
+    src/cache.cpp
+    src/lexer.cpp
+    src/optimizer.cpp
+    src/rewriter.cpp
+    src/splitter.cpp
+    src/token_stream.cpp
 )
 
 add_library(bishop_core STATIC ${BISHOP_SOURCES})
@@ -54,6 +61,14 @@ if(BISHOP_BUILD_TESTS)
         tests/test_unicode.cpp
         tests/test_match_iterator.cpp
         tests/test_exhaustive.cpp
+        tests/test_splitter.cpp
+        tests/test_cache.cpp
+        tests/test_analyzer.cpp
+        tests/test_integration.cpp
+        tests/test_optimizer.cpp
+        tests/test_regex_suite.cpp
+        tests/test_rewriter.cpp
+        tests/test_token_stream.cpp
     )
     target_link_libraries(bishop_tests PRIVATE bishop_core)
     add_test(NAME bishop_tests COMMAND bishop_tests)
