@@ -1,6 +1,7 @@
 #ifndef BISHOP_REWRITER_HPP_
 #define BISHOP_REWRITER_HPP_
 
+#include <functional>
 #include <string>
 #include <vector>
 

@@ -1,8 +1,10 @@
 #include <cstdint>
 #include <string>
+
 #include "bishop/regex.hpp"
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
     if (size < 2) return 0;
     size_t sep = 0;
     while (sep < size && data[sep] != '\n') ++sep;
@@ -16,7 +18,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         re.compile(pattern);
         re.match(text);
         re.search(text);
-    } catch (const bishop::RegexError&) {
+    }
+    catch (const bishop::RegexError&) {
         return 0;
     }
     return 0;

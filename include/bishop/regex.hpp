@@ -43,7 +43,7 @@ public:
         }
     }
 
-    bool match(const std::string& text)
+    bool match(const std::string& text) const
     {
         return nfa::nfa_match(nfa_, text, flags_);
     }
@@ -124,6 +124,46 @@ public:
         return nfa_;
     }
 
+    nfa::MatchData search_match(const std::string& text)
+    {
+        size_t start_hi = anchored_start_ ? 1 : text.size() + 1;
+        for (size_t i = 0; i < start_hi; ++i) {
+            size_t j_lo = anchored_end_ ? text.size() : i;
+            for (size_t j = j_lo; j <= text.size(); ++j) {
+                auto md = nfa::nfa_match_captures(nfa_, text.substr(i, j - i), 0, flags_);
+                if (md.matched) {
+                    md.start = i;
+                    md.end = j;
+                    return md;
+                }
+            }
+        }
+        return {};
+    }
+
+    std::vector<nfa::MatchData> find_all_matches(const std::string& text)
+    {
+        std::vector<nfa::MatchData> results;
+        size_t pos = 0;
+        while (pos <= text.size()) {
+            bool found = false;
+            for (size_t j = text.size(); j >= pos; --j) {
+                auto md = nfa::nfa_match_captures(nfa_, text.substr(pos, j - pos), 0, flags_);
+                if (md.matched) {
+                    md.start = pos;
+                    md.end = j;
+                    results.push_back(md);
+                    pos = (j == pos) ? j + 1 : j;
+                    found = true;
+                    break;
+                }
+                if (j == pos) break;
+            }
+            if (!found) ++pos;
+        }
+        return results;
+    }
+
 private:
     nfa::NFA nfa_{nullptr, nullptr};
     Flag flags_{Flag::NONE};
@@ -133,44 +173,4 @@ private:
 };
 
 }  // namespace bishop
-
-nfa::MatchData search_match(const std::string& text)
-{
-    size_t start_hi = anchored_start_ ? 1 : text.size() + 1;
-    for (size_t i = 0; i < start_hi; ++i) {
-        size_t j_lo = anchored_end_ ? text.size() : i;
-        for (size_t j = j_lo; j <= text.size(); ++j) {
-            auto md = nfa::nfa_match_captures(nfa_, text.substr(i, j - i), 0, flags_);
-            if (md.matched) {
-                md.start = i;
-                md.end = j;
-                return md;
-            }
-        }
-    }
-    return {};
-}
-
-std::vector<nfa::MatchData> find_all_matches(const std::string& text)
-{
-    std::vector<nfa::MatchData> results;
-    size_t pos = 0;
-    while (pos <= text.size()) {
-        bool found = false;
-        for (size_t j = text.size(); j >= pos; --j) {
-            auto md = nfa::nfa_match_captures(nfa_, text.substr(pos, j - pos), 0, flags_);
-            if (md.matched) {
-                md.start = pos;
-                md.end = j;
-                results.push_back(md);
-                pos = (j == pos) ? j + 1 : j;
-                found = true;
-                break;
-            }
-            if (j == pos) break;
-        }
-        if (!found) ++pos;
-    }
-    return results;
-}
 #endif

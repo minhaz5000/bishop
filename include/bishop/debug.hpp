@@ -13,19 +13,15 @@
 namespace bishop {
 namespace debug {
 
-void print_nfa_dot(const nfa::NFA& n, std::ostream& out,
-                   const std::string& graph_name = "NFA");
+void print_nfa_dot(const nfa::NFA& n, std::ostream& out, const std::string& graph_name = "NFA");
 
-void print_dfa_dot(const dfa::DFA& d, std::ostream& out,
-                   const std::string& graph_name = "DFA");
+void print_dfa_dot(const dfa::DFA& d, std::ostream& out, const std::string& graph_name = "DFA");
 
 void print_nfa_text(const nfa::NFA& n, std::ostream& out);
 void print_dfa_text(const dfa::DFA& d, std::ostream& out);
 
-std::string nfa_to_dot(const nfa::NFA& n,
-                       const std::string& graph_name = "NFA");
-std::string dfa_to_dot(const dfa::DFA& d,
-                       const std::string& graph_name = "DFA");
+std::string nfa_to_dot(const nfa::NFA& n, const std::string& graph_name = "NFA");
+std::string dfa_to_dot(const dfa::DFA& d, const std::string& graph_name = "DFA");
 
 size_t nfa_state_count(const nfa::NFA& n);
 size_t nfa_transition_count(const nfa::NFA& n);

@@ -10,6 +10,8 @@
 
 namespace nfa {
 
+struct NFA;
+
 enum class BoundaryType { None, WordBoundary, NonWordBoundary };
 enum class LookType { None, Ahead, NegAhead };
 
@@ -48,15 +50,12 @@ NFA create_nfa_lazy_question(int& id, NFA first);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);
-bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags = bishop::Flag::NONE);
+bool nfa_match(const NFA& nfa, const std::string& input, bishop::Flag flags = bishop::Flag::NONE);
 
 struct SimThread {
     State* state;
     std::vector<std::pair<size_t, size_t>> captures;
 };
-
-}  // namespace nfa
-#endif
 
 struct MatchData {
     bool matched{false};
@@ -74,5 +73,8 @@ struct MatchData {
     }
 };
 
-MatchData nfa_match_captures(NFA& nfa, const std::string& input, size_t from = 0,
+MatchData nfa_match_captures(const NFA& nfa, const std::string& input, size_t from = 0,
                              bishop::Flag flags = bishop::Flag::NONE);
+
+}  // namespace nfa
+#endif

@@ -1,5 +1,6 @@
 #include "bishop/dfa.hpp"
 
+#include <algorithm>
 #include <map>
 #include <queue>
 #include <set>

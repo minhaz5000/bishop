@@ -31,7 +31,7 @@ static std::vector<bool> cs_union(std::vector<bool> a, const std::vector<bool>& 
 
 static std::vector<bool> cs_negate(std::vector<bool> cs)
 {
-    for (auto& b : cs) b = !b;
+    for (std::size_t i = 0; i < cs.size(); ++i) cs[i] = !cs[i];
     return cs;
 }
 
@@ -80,7 +80,7 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
             tokens.push_back({TokenType::Literal, (char)ch, {}, 0, -1});
         } else {
             switch (ch) {
-                case +: {
+                case '+': {
                     tokens.push_back({TokenType::Plus, '+', {}, 0, -1});
                     if ((it + 1) != s.cend() && *(it + 1) == '?') {
                         ++it;
@@ -88,7 +88,7 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
                     }
                     break;
                 }
-                case *: {
+                case '*': {
                     tokens.push_back({TokenType::Star, '*', {}, 0, -1});
                     if ((it + 1) != s.cend() && *(it + 1) == '?') {
                         ++it;
@@ -294,7 +294,7 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
     return tokens;
 }
 
-static void apply_ignorecase(std::vector<Token>& tokens)
+void apply_ignorecase(std::vector<Token>& tokens)
 {
     for (auto& tok : tokens) {
         if (tok.type == TokenType::Literal) {

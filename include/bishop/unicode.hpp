@@ -10,7 +10,7 @@ namespace unicode {
 
 struct Decoded {
     uint32_t codepoint{0};
-    size_t   bytes{0};
+    size_t bytes{0};
 };
 
 Decoded decode_one(const std::string& s, size_t pos);

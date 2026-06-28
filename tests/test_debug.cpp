@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "bishop/debug.hpp"
 #include "bishop/dfa.hpp"
 #include "bishop/nfa.hpp"

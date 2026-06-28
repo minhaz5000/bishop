@@ -9,6 +9,7 @@ option(BISHOP_BUILD_TESTS  "Build unit tests"   ON)
 option(BISHOP_BUILD_BENCH  "Build benchmarks"   ON)
 option(BISHOP_ASAN         "Enable AddressSanitizer" OFF)
 option(BISHOP_UBSAN        "Enable UBSanitizer"      OFF)
+option(BISHOP_BUILD_FUZZERS "Build libFuzzer targets" ON)
 
 if(BISHOP_ASAN)
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
@@ -77,9 +78,30 @@ endif()
 if(BISHOP_BUILD_BENCH)
     find_package(benchmark QUIET)
     if(benchmark_FOUND)
-        add_executable(bishop_bench bench/benchmark.cpp bench/benchmark_extended.cpp)
+        add_executable(bishop_bench
+            bench/benchmark.cpp
+        )
         target_link_libraries(bishop_bench PRIVATE bishop_core benchmark::benchmark)
+
+        add_executable(bishop_bench_extended
+            bench/benchmark_extended.cpp
+        )
+        target_link_libraries(bishop_bench_extended PRIVATE bishop_core benchmark::benchmark)
     endif()
+endif()
+
+if(BISHOP_BUILD_FUZZERS)
+    foreach(fuzzer
+        regex_fuzzer
+        lexer_fuzzer
+        dfa_fuzzer
+        unicode_fuzzer
+    )
+        add_executable(${fuzzer} fuzz/${fuzzer}.cc)
+        target_link_libraries(${fuzzer} PRIVATE bishop_core)
+        target_compile_options(${fuzzer} PRIVATE -fsanitize=fuzzer,address)
+        target_link_options(${fuzzer} PRIVATE -fsanitize=fuzzer,address)
+    endforeach()
 endif()
 
 install(TARGETS bishop_core ARCHIVE DESTINATION lib)

@@ -12,15 +12,15 @@
 namespace bishop {
 namespace serial {
 
-static constexpr uint32_t MAGIC   = 0x42495346u;
+static constexpr uint32_t MAGIC = 0x42495346u;
 static constexpr uint16_t VERSION = 0x0001u;
 
 struct Header {
     uint32_t magic;
     uint16_t version;
     uint32_t state_count;
-    int32_t  start_state;
-    uint8_t  flags;
+    int32_t start_state;
+    uint8_t flags;
 };
 
 void serialize_dfa(const dfa::DFA& d, std::ostream& out);

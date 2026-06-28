@@ -10,19 +10,19 @@
 namespace dfa {
 
 struct DFAState {
-    int  id;
+    int id;
     bool is_accept;
     std::unordered_map<unsigned char, int> transitions;
 };
 
 struct DFA {
     std::vector<DFAState> states;
-    int  start{0};
+    int start{0};
     bool valid{false};
 };
 
-DFA  nfa_to_dfa(nfa::NFA& n);
-DFA  minimize(const DFA& d);
+DFA nfa_to_dfa(nfa::NFA& n);
+DFA minimize(const DFA& d);
 bool dfa_match(const DFA& d, const std::string& input);
 
 }  // namespace dfa

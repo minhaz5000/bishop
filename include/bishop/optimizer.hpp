@@ -20,12 +20,12 @@ struct OptStats {
     size_t epsilon_chains_collapsed{0};
 };
 
-OptStats   nfa_stats(const nfa::NFA& n);
-size_t     count_dead_states(const nfa::NFA& n);
-size_t     count_epsilon_chains(const nfa::NFA& n);
-OptStats   remove_dead_states(nfa::NFA& n);
-OptStats   collapse_epsilon_chains(nfa::NFA& n);
-OptStats   full_optimize(nfa::NFA& n);
+OptStats nfa_stats(const nfa::NFA& n);
+size_t count_dead_states(const nfa::NFA& n);
+size_t count_epsilon_chains(const nfa::NFA& n);
+OptStats remove_dead_states(nfa::NFA& n);
+OptStats collapse_epsilon_chains(nfa::NFA& n);
+OptStats full_optimize(nfa::NFA& n);
 std::string stats_summary(const OptStats& s);
 
 }  // namespace optimizer

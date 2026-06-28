@@ -229,7 +229,7 @@ static std::set<State*> boundary_filter(const std::set<State*>& states, char pre
     return result;
 }
 
-bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags)
+bool nfa_match(const NFA& nfa, const std::string& input, bishop::Flag flags)
 {
     std::set<State*> current = epsilon_closure({nfa.start});
 
@@ -336,8 +336,6 @@ NFA create_nfa_concat(int& id, NFA first, NFA second)
     return {first.start, second.end};
 }
 
-}  // namespace nfa
-
 NFA create_nfa_lookahead(int& id, NFA inner, bool negative)
 {
     State* s = new State{id++, true};
@@ -379,65 +377,52 @@ NFA create_nfa_lazy_question(int& id, NFA first)
     first.end->epsilon.push_back(end);
     return {start, end};
 }
-
 }  // namespace nfa
 
-cat >> / home / claude / bishop2 / bishop / src / nfa.cpp << 'SRCEOF'
+namespace {
+using Caps = std::vector<std::pair<size_t, size_t>>;
 
-           // ---------------------------------------------------------------------------
-           // Capture-aware NFA simulation
-           // ---------------------------------------------------------------------------
+struct CThread {
+    nfa::State* s;
+    Caps caps;
+};
 
-           namespace
+static void eps_expand(std::vector<CThread>& dest, nfa::State* st, Caps caps, size_t pos,
+                       std::unordered_set<nfa::State*>& visited, int max_group)
 {
-    using Caps = std::vector<std::pair<size_t, size_t>>;
+    if (!visited.insert(st).second) return;
 
-    struct CThread {
-        nfa::State* s;
-        Caps caps;
-    };
+    if (st->group_start >= 0 && st->group_start < max_group) caps[static_cast<size_t>(st->group_start)].first = pos;
+    if (st->group_end >= 0 && st->group_end < max_group) caps[static_cast<size_t>(st->group_end)].second = pos;
 
-    /// Recursively follow epsilon transitions from `st`, updating capture group
-    /// boundaries as group-open/close marker states are traversed.
-    /// `visited` prevents looping on epsilon cycles.
-    static void eps_expand(std::vector<CThread> & dest, nfa::State * st, Caps caps, size_t pos,
-                           std::unordered_set<nfa::State*>& visited, int max_group)
-    {
-        if (!visited.insert(st).second) return;
+    dest.push_back({st, caps});
 
-        // Update capture boundaries for group-marker states.
-        if (st->group_start >= 0 && st->group_start < max_group) caps[static_cast<size_t>(st->group_start)].first = pos;
-        if (st->group_end >= 0 && st->group_end < max_group) caps[static_cast<size_t>(st->group_end)].second = pos;
-
-        dest.push_back({st, caps});
-
-        for (nfa::State* e : st->epsilon) eps_expand(dest, e, caps, pos, visited, max_group);
-    }
-
-    /// Determine the maximum number of capture groups in an NFA.
-    static int max_group_count(nfa::State * root)
-    {
-        int mx = 0;
-        std::unordered_set<nfa::State*> visited;
-        std::stack<nfa::State*> stk;
-        stk.push(root);
-        while (!stk.empty()) {
-            nfa::State* s = stk.top();
-            stk.pop();
-            if (!visited.insert(s).second) continue;
-            if (s->group_start >= 0) mx = std::max(mx, s->group_start + 1);
-            if (s->group_end >= 0) mx = std::max(mx, s->group_end + 1);
-            for (nfa::State* e : s->epsilon) stk.push(e);
-            for (auto& [c, d] : s->transitions) stk.push(d);
-            if (s->any_transition) stk.push(s->any_transition);
-        }
-        return mx;
-    }
+    for (nfa::State* e : st->epsilon) eps_expand(dest, e, caps, pos, visited, max_group);
 }
+
+static int max_group_count(nfa::State* root)
+{
+    int mx = 0;
+    std::unordered_set<nfa::State*> visited;
+    std::stack<nfa::State*> stk;
+    stk.push(root);
+    while (!stk.empty()) {
+        nfa::State* s = stk.top();
+        stk.pop();
+        if (!visited.insert(s).second) continue;
+        if (s->group_start >= 0) mx = std::max(mx, s->group_start + 1);
+        if (s->group_end >= 0) mx = std::max(mx, s->group_end + 1);
+        for (nfa::State* e : s->epsilon) stk.push(e);
+        for (auto& [c, d] : s->transitions) stk.push(d);
+        if (s->any_transition) stk.push(s->any_transition);
+    }
+    return mx;
+}
+}  // namespace
 
 namespace nfa {
 
-MatchData nfa_match_captures(NFA& nfa, const std::string& input, size_t from, bishop::Flag flags)
+MatchData nfa_match_captures(const NFA& nfa, const std::string& input, size_t from, bishop::Flag flags)
 {
     MatchData result;
     if (!nfa.start) return result;
