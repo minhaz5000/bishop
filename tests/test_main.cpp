@@ -1,13 +1,15 @@
 #include "framework.hpp"
 
-int main() {
+int main()
+{
     int passed = 0, failed = 0;
     for (auto& t : test_registry()) {
         try {
             t.fn();
             std::printf("PASS  %s\n", t.name.c_str());
             ++passed;
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             std::printf("FAIL  %s  —  %s\n", t.name.c_str(), e.what());
             ++failed;
         }

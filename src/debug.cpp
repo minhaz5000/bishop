@@ -14,7 +14,8 @@ static std::vector<nfa::State*> collect_nfa_states(const nfa::NFA& n)
     std::stack<nfa::State*> stk;
     stk.push(n.start);
     while (!stk.empty()) {
-        nfa::State* s = stk.top(); stk.pop();
+        nfa::State* s = stk.top();
+        stk.pop();
         if (!visited.insert(s).second) continue;
         result.push_back(s);
         for (nfa::State* e : s->epsilon) stk.push(e);
@@ -40,8 +41,7 @@ size_t nfa_transition_count(const nfa::NFA& n)
     return count;
 }
 
-void print_nfa_dot(const nfa::NFA& n, std::ostream& out,
-                   const std::string& graph_name)
+void print_nfa_dot(const nfa::NFA& n, std::ostream& out, const std::string& graph_name)
 {
     out << "digraph " << graph_name << " {\n";
     out << "  rankdir=LR;\n";
@@ -60,14 +60,10 @@ void print_nfa_dot(const nfa::NFA& n, std::ostream& out,
     if (n.start) out << "  start -> s" << n.start->id << ";\n";
 
     for (nfa::State* s : states) {
-        for (nfa::State* e : s->epsilon)
-            out << "  s" << s->id << " -> s" << e->id << " [label=\"ε\"];\n";
+        for (nfa::State* e : s->epsilon) out << "  s" << s->id << " -> s" << e->id << " [label=\"ε\"];\n";
         for (auto& [ch, dst] : s->transitions)
-            out << "  s" << s->id << " -> s" << dst->id
-                << " [label=\"" << utils::escape_for_display(ch) << "\"];\n";
-        if (s->any_transition)
-            out << "  s" << s->id << " -> s" << s->any_transition->id
-                << " [label=\".\"];\n";
+            out << "  s" << s->id << " -> s" << dst->id << " [label=\"" << utils::escape_for_display(ch) << "\"];\n";
+        if (s->any_transition) out << "  s" << s->id << " -> s" << s->any_transition->id << " [label=\".\"];\n";
     }
     out << "}\n";
 }
@@ -84,20 +80,15 @@ void print_nfa_text(const nfa::NFA& n, std::ostream& out)
     auto states = collect_nfa_states(n);
     out << "NFA: " << states.size() << " states\n";
     for (nfa::State* s : states) {
-        out << "  [" << s->id << "]"
-            << (s->is_accept ? " ACCEPT" : "")
-            << (s == n.start ? " START" : "") << "\n";
-        for (nfa::State* e : s->epsilon)
-            out << "    --ε--> " << e->id << "\n";
+        out << "  [" << s->id << "]" << (s->is_accept ? " ACCEPT" : "") << (s == n.start ? " START" : "") << "\n";
+        for (nfa::State* e : s->epsilon) out << "    --ε--> " << e->id << "\n";
         for (auto& [ch, dst] : s->transitions)
             out << "    --" << utils::escape_for_display(ch) << "--> " << dst->id << "\n";
-        if (s->any_transition)
-            out << "    --.--> " << s->any_transition->id << "\n";
+        if (s->any_transition) out << "    --.--> " << s->any_transition->id << "\n";
     }
 }
 
-void print_dfa_dot(const dfa::DFA& d, std::ostream& out,
-                   const std::string& graph_name)
+void print_dfa_dot(const dfa::DFA& d, std::ostream& out, const std::string& graph_name)
 {
     out << "digraph " << graph_name << " {\n";
     out << "  rankdir=LR;\n";
@@ -117,12 +108,10 @@ void print_dfa_dot(const dfa::DFA& d, std::ostream& out,
         std::unordered_map<int, std::string> edge_labels;
         for (auto& [ch, dst] : s.transitions) {
             edge_labels[dst] += utils::escape_for_display(ch);
-            if (edge_labels[dst].size() > 6)
-                edge_labels[dst] = edge_labels[dst].substr(0, 6) + "…";
+            if (edge_labels[dst].size() > 6) edge_labels[dst] = edge_labels[dst].substr(0, 6) + "…";
         }
         for (auto& [dst, label] : edge_labels)
-            out << "  d" << s.id << " -> d" << dst
-                << " [label=\"" << label << "\"];\n";
+            out << "  d" << s.id << " -> d" << dst << " [label=\"" << label << "\"];\n";
     }
     out << "}\n";
 }
@@ -138,11 +127,8 @@ void print_dfa_text(const dfa::DFA& d, std::ostream& out)
 {
     out << "DFA: " << d.states.size() << " states  start=" << d.start << "\n";
     for (const auto& s : d.states) {
-        out << "  [" << s.id << "]"
-            << (s.is_accept ? " ACCEPT" : "")
-            << (s.id == d.start ? " START" : "") << "\n";
-        for (auto& [ch, dst] : s.transitions)
-            out << "    --" << utils::escape_for_display(ch) << "--> " << dst << "\n";
+        out << "  [" << s.id << "]" << (s.is_accept ? " ACCEPT" : "") << (s.id == d.start ? " START" : "") << "\n";
+        for (auto& [ch, dst] : s.transitions) out << "    --" << utils::escape_for_display(ch) << "--> " << dst << "\n";
     }
 }
 

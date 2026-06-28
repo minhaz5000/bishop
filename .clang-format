@@ -1,0 +1,39 @@
+BasedOnStyle: Google
+TabWidth: 4
+IndentWidth: 4
+ColumnLimit: 120
+UseTab: Never
+Language: Cpp
+Standard: Latest
+# AlignArrayOfStructures: Right
+MaxEmptyLinesToKeep: 1
+AlignEscapedNewlines: Left
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: true
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakTemplateDeclarations: Yes
+# NamespaceIndentation: All
+PointerAlignment: Left
+IndentPPDirectives: BeforeHash
+IndentCaseLabels: true
+EmptyLineBeforeAccessModifier: LogicalBlock
+IndentAccessModifiers: false
+AccessModifierOffset: -4

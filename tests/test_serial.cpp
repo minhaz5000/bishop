@@ -1,13 +1,15 @@
-#include "framework.hpp"
-#include "bishop/serializer.hpp"
+#include <sstream>
+
 #include "bishop/dfa.hpp"
 #include "bishop/nfa.hpp"
+#include "bishop/serializer.hpp"
 #include "bishop/tokenizer.hpp"
-#include <sstream>
+#include "framework.hpp"
 
 using namespace tokenizer;
 
-static dfa::DFA compile(const std::string& pat) {
+static dfa::DFA compile(const std::string& pat)
+{
     auto t = tokenize(pat);
     strip_anchors(t);
     t = insert_concats(t);
@@ -15,7 +17,8 @@ static dfa::DFA compile(const std::string& pat) {
     return dfa::nfa_to_dfa(n);
 }
 
-TEST(binary_roundtrip_literal) {
+TEST(binary_roundtrip_literal)
+{
     auto d = compile("abc");
     std::ostringstream out;
     bishop::serial::serialize_dfa(d, out);
@@ -26,7 +29,8 @@ TEST(binary_roundtrip_literal) {
     ASSERT_EQ(d.valid, d2.valid);
 }
 
-TEST(binary_roundtrip_match_preserved) {
+TEST(binary_roundtrip_match_preserved)
+{
     auto d = compile("a+b");
     std::ostringstream out;
     bishop::serial::serialize_dfa(d, out);
@@ -38,7 +42,8 @@ TEST(binary_roundtrip_match_preserved) {
     ASSERT_FALSE(dfa::dfa_match(d2, ""));
 }
 
-TEST(binary_roundtrip_union) {
+TEST(binary_roundtrip_union)
+{
     auto d = compile("cat|dog");
     std::ostringstream out;
     bishop::serial::serialize_dfa(d, out);
@@ -49,12 +54,14 @@ TEST(binary_roundtrip_union) {
     ASSERT_FALSE(dfa::dfa_match(d2, "cow"));
 }
 
-TEST(binary_bad_magic_throws) {
+TEST(binary_bad_magic_throws)
+{
     std::istringstream in("BADMAGICDATA");
     ASSERT_THROWS(bishop::serial::deserialize_dfa(in));
 }
 
-TEST(text_roundtrip_literal) {
+TEST(text_roundtrip_literal)
+{
     auto d = compile("hello");
     std::ostringstream out;
     bishop::serial::serialize_dfa_text(d, out);
@@ -64,7 +71,8 @@ TEST(text_roundtrip_literal) {
     ASSERT_EQ(d.start, d2.start);
 }
 
-TEST(text_roundtrip_match_preserved) {
+TEST(text_roundtrip_match_preserved)
+{
     auto d = compile("[a-z]+");
     std::ostringstream out;
     bishop::serial::serialize_dfa_text(d, out);
@@ -74,7 +82,8 @@ TEST(text_roundtrip_match_preserved) {
     ASSERT_FALSE(dfa::dfa_match(d2, "123"));
 }
 
-TEST(text_roundtrip_star) {
+TEST(text_roundtrip_star)
+{
     auto d = compile("a*");
     std::ostringstream out;
     bishop::serial::serialize_dfa_text(d, out);
@@ -85,12 +94,14 @@ TEST(text_roundtrip_star) {
     ASSERT_FALSE(dfa::dfa_match(d2, "b"));
 }
 
-TEST(text_bad_header_throws) {
+TEST(text_bad_header_throws)
+{
     std::istringstream in("GARBAGE 1\n");
     ASSERT_THROWS(bishop::serial::deserialize_dfa_text(in));
 }
 
-TEST(binary_valid_flag_preserved) {
+TEST(binary_valid_flag_preserved)
+{
     auto d = compile("x");
     std::ostringstream out;
     bishop::serial::serialize_dfa(d, out);
@@ -99,22 +110,25 @@ TEST(binary_valid_flag_preserved) {
     ASSERT_EQ(d.valid, d2.valid);
 }
 
-TEST(text_output_contains_header) {
+TEST(text_output_contains_header)
+{
     auto d = compile("a");
     std::ostringstream out;
     bishop::serial::serialize_dfa_text(d, out);
     ASSERT_TRUE(out.str().find("BISHOP_DFA") != std::string::npos);
 }
 
-TEST(text_output_contains_end) {
+TEST(text_output_contains_end)
+{
     auto d = compile("a");
     std::ostringstream out;
     bishop::serial::serialize_dfa_text(d, out);
     ASSERT_TRUE(out.str().find("END") != std::string::npos);
 }
 
-TEST(minimize_then_roundtrip) {
-    auto d   = compile("(a|b)+c");
+TEST(minimize_then_roundtrip)
+{
+    auto d = compile("(a|b)+c");
     auto min = dfa::minimize(d);
     std::ostringstream out;
     bishop::serial::serialize_dfa(min, out);

@@ -1,13 +1,15 @@
-#include "framework.hpp"
+#include <string>
+#include <vector>
+
 #include "bishop/match_iterator.hpp"
 #include "bishop/regex.hpp"
-#include <vector>
-#include <string>
+#include "framework.hpp"
 
-using bishop::Regex;
 using bishop::MatchIterator;
+using bishop::Regex;
 
-TEST(match_iterator_empty_match) {
+TEST(match_iterator_empty_match)
+{
     Regex r("z");
     std::string text = "abc";
     MatchIterator it(&r, text);
@@ -15,7 +17,8 @@ TEST(match_iterator_empty_match) {
     ASSERT_TRUE(it == end);
 }
 
-TEST(match_iterator_multiple_matches) {
+TEST(match_iterator_multiple_matches)
+{
     Regex r("a+");
     std::string text = "baaabaa";
     MatchIterator it(&r, text);

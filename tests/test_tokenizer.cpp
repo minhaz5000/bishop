@@ -1,72 +1,84 @@
-#include "framework.hpp"
 #include "bishop/tokenizer.hpp"
+#include "framework.hpp"
 
 using namespace tokenizer;
 
-TEST(empty_pattern_yields_no_tokens) {
+TEST(empty_pattern_yields_no_tokens)
+{
     ASSERT_TRUE(tokenize("").empty());
 }
 
-TEST(single_literal) {
+TEST(single_literal)
+{
     auto t = tokenize("a");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_EQ(t[0].type, TokenType::Literal);
     ASSERT_EQ(t[0].value, 'a');
 }
 
-TEST(digit_literal) {
+TEST(digit_literal)
+{
     auto t = tokenize("7");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_EQ(t[0].type, TokenType::Literal);
     ASSERT_EQ(t[0].value, '7');
 }
 
-TEST(star_operator) {
+TEST(star_operator)
+{
     auto t = tokenize("a*");
     ASSERT_EQ(t.size(), 2u);
     ASSERT_EQ(t[1].type, TokenType::Star);
 }
 
-TEST(plus_operator) {
+TEST(plus_operator)
+{
     auto t = tokenize("b+");
     ASSERT_EQ(t[1].type, TokenType::Plus);
 }
 
-TEST(question_operator) {
+TEST(question_operator)
+{
     auto t = tokenize("c?");
     ASSERT_EQ(t[1].type, TokenType::Question);
 }
 
-TEST(union_operator) {
+TEST(union_operator)
+{
     auto t = tokenize("a|b");
     ASSERT_EQ(t.size(), 3u);
     ASSERT_EQ(t[1].type, TokenType::Union);
 }
 
-TEST(parens) {
+TEST(parens)
+{
     auto t = tokenize("(a)");
     ASSERT_EQ(t.size(), 3u);
     ASSERT_EQ(t[0].type, TokenType::LParen);
     ASSERT_EQ(t[2].type, TokenType::RParen);
 }
 
-TEST(dot_wildcard) {
+TEST(dot_wildcard)
+{
     auto t = tokenize(".");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_EQ(t[0].type, TokenType::Dot);
 }
 
-TEST(anchor_start) {
+TEST(anchor_start)
+{
     auto t = tokenize("^a");
     ASSERT_EQ(t[0].type, TokenType::AnchorStart);
 }
 
-TEST(anchor_end) {
+TEST(anchor_end)
+{
     auto t = tokenize("a$");
     ASSERT_EQ(t.back().type, TokenType::AnchorEnd);
 }
 
-TEST(charclass_basic) {
+TEST(charclass_basic)
+{
     auto t = tokenize("[abc]");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_EQ(t[0].type, TokenType::CharClass);
@@ -76,7 +88,8 @@ TEST(charclass_basic) {
     ASSERT_FALSE(t[0].char_set['d']);
 }
 
-TEST(charclass_range) {
+TEST(charclass_range)
+{
     auto t = tokenize("[a-z]");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_TRUE(t[0].char_set['a']);
@@ -85,7 +98,8 @@ TEST(charclass_range) {
     ASSERT_FALSE(t[0].char_set['A']);
 }
 
-TEST(charclass_negated) {
+TEST(charclass_negated)
+{
     auto t = tokenize("[^abc]");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_FALSE(t[0].char_set['a']);
@@ -93,7 +107,8 @@ TEST(charclass_negated) {
     ASSERT_TRUE(t[0].char_set['d']);
 }
 
-TEST(escape_digit_shorthand) {
+TEST(escape_digit_shorthand)
+{
     auto t = tokenize("\\d");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_EQ(t[0].type, TokenType::CharClass);
@@ -101,7 +116,8 @@ TEST(escape_digit_shorthand) {
     ASSERT_FALSE(t[0].char_set['a']);
 }
 
-TEST(escape_word_shorthand) {
+TEST(escape_word_shorthand)
+{
     auto t = tokenize("\\w");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_TRUE(t[0].char_set['a']);
@@ -111,7 +127,8 @@ TEST(escape_word_shorthand) {
     ASSERT_FALSE(t[0].char_set[' ']);
 }
 
-TEST(escape_space_shorthand) {
+TEST(escape_space_shorthand)
+{
     auto t = tokenize("\\s");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_TRUE(t[0].char_set[' ']);
@@ -119,19 +136,22 @@ TEST(escape_space_shorthand) {
     ASSERT_FALSE(t[0].char_set['a']);
 }
 
-TEST(escape_control_n) {
+TEST(escape_control_n)
+{
     auto t = tokenize("\\n");
     ASSERT_EQ(t.size(), 1u);
     ASSERT_EQ(t[0].type, TokenType::Literal);
     ASSERT_EQ(t[0].value, '\n');
 }
 
-TEST(escape_control_t) {
+TEST(escape_control_t)
+{
     auto t = tokenize("\\t");
     ASSERT_EQ(t[0].value, '\t');
 }
 
-TEST(repeat_exact) {
+TEST(repeat_exact)
+{
     auto t = tokenize("a{3}");
     ASSERT_EQ(t.size(), 2u);
     ASSERT_EQ(t[1].type, TokenType::Repeat);
@@ -139,31 +159,35 @@ TEST(repeat_exact) {
     ASSERT_EQ(t[1].repeat_max, 3);
 }
 
-TEST(repeat_range) {
+TEST(repeat_range)
+{
     auto t = tokenize("a{2,5}");
     ASSERT_EQ(t[1].repeat_min, 2);
     ASSERT_EQ(t[1].repeat_max, 5);
 }
 
-TEST(repeat_unbounded) {
+TEST(repeat_unbounded)
+{
     auto t = tokenize("a{2,}");
     ASSERT_EQ(t[1].repeat_min, 2);
     ASSERT_EQ(t[1].repeat_max, -1);
 }
 
-TEST(insert_concats_simple) {
+TEST(insert_concats_simple)
+{
     auto t = insert_concats(tokenize("ab"));
     ASSERT_EQ(t.size(), 3u);
     ASSERT_EQ(t[1].type, TokenType::Concat);
 }
 
-TEST(insert_concats_no_concat_before_union) {
+TEST(insert_concats_no_concat_before_union)
+{
     auto t = insert_concats(tokenize("a|b"));
-    for (auto& tok : t)
-        ASSERT_NE(tok.type, TokenType::Concat);
+    for (auto& tok : t) ASSERT_NE(tok.type, TokenType::Concat);
 }
 
-TEST(to_postfix_simple_concat) {
+TEST(to_postfix_simple_concat)
+{
     auto post = to_postfix(insert_concats(tokenize("ab")));
     ASSERT_EQ(post.size(), 3u);
     ASSERT_EQ(post[0].type, TokenType::Literal);
@@ -171,22 +195,25 @@ TEST(to_postfix_simple_concat) {
     ASSERT_EQ(post[2].type, TokenType::Concat);
 }
 
-TEST(to_postfix_star) {
+TEST(to_postfix_star)
+{
     auto post = to_postfix(insert_concats(tokenize("a*")));
     ASSERT_EQ(post.back().type, TokenType::Star);
 }
 
-TEST(strip_anchors_removes_caret) {
+TEST(strip_anchors_removes_caret)
+{
     auto toks = tokenize("^abc");
-    auto info  = strip_anchors(toks);
+    auto info = strip_anchors(toks);
     ASSERT_TRUE(info.start);
     ASSERT_FALSE(info.end);
     ASSERT_EQ(toks.front().type, TokenType::Literal);
 }
 
-TEST(strip_anchors_removes_dollar) {
+TEST(strip_anchors_removes_dollar)
+{
     auto toks = tokenize("abc$");
-    auto info  = strip_anchors(toks);
+    auto info = strip_anchors(toks);
     ASSERT_FALSE(info.start);
     ASSERT_TRUE(info.end);
     ASSERT_EQ(toks.back().type, TokenType::Literal);
