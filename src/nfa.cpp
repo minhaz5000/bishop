@@ -1,5 +1,3 @@
-#include "bishop/flags.hpp"
-#include "bishop/error.hpp"
 #include "bishop/nfa.hpp"
 
 #include <set>
@@ -7,6 +5,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "bishop/error.hpp"
+#include "bishop/flags.hpp"
 
 namespace nfa {
 
@@ -23,14 +24,13 @@ static std::vector<State*> collect_states(State* root)
     stk.push(root);
 
     while (!stk.empty()) {
-        State* s = stk.top(); stk.pop();
+        State* s = stk.top();
+        stk.pop();
         if (!visited.insert(s).second) continue;
         result.push_back(s);
 
-        for (State* e : s->epsilon)
-            stk.push(e);
-        for (auto& [ch, dst] : s->transitions)
-            stk.push(dst);
+        for (State* e : s->epsilon) stk.push(e);
+        for (auto& [ch, dst] : s->transitions) stk.push(dst);
     }
 
     return result;
@@ -48,12 +48,9 @@ static NFA clone_nfa(int& id, const NFA& src)
 
     for (State* s : states) {
         State* fresh = mapping[s];
-        for (auto& [ch, dst] : s->transitions)
-            fresh->transitions[ch] = mapping[dst];
-        for (State* eps : s->epsilon)
-            fresh->epsilon.push_back(mapping[eps]);
-        if (s->any_transition)
-            fresh->any_transition = mapping[s->any_transition];
+        for (auto& [ch, dst] : s->transitions) fresh->transitions[ch] = mapping[dst];
+        for (State* eps : s->epsilon) fresh->epsilon.push_back(mapping[eps]);
+        if (s->any_transition) fresh->any_transition = mapping[s->any_transition];
     }
 
     return {mapping[src.start], mapping[src.end]};
@@ -63,28 +60,24 @@ NFA create_nfa_repeat(int& id, const NFA& base, int min_rep, int max_rep)
 {
     NFA result = clone_nfa(id, base);
 
-    for (int i = 1; i < min_rep; ++i)
-        result = create_nfa_concat(id, result, clone_nfa(id, base));
+    for (int i = 1; i < min_rep; ++i) result = create_nfa_concat(id, result, clone_nfa(id, base));
 
     if (max_rep < 0) {
-        result = create_nfa_concat(id, result,
-                     create_nfa_kleene_star(id, clone_nfa(id, base)));
+        result = create_nfa_concat(id, result, create_nfa_kleene_star(id, clone_nfa(id, base)));
     } else {
         for (int i = min_rep; i < max_rep; ++i)
-            result = create_nfa_concat(id, result,
-                         create_nfa_question(id, clone_nfa(id, base)));
+            result = create_nfa_concat(id, result, create_nfa_question(id, clone_nfa(id, base)));
     }
 
     return result;
 }
 
-
 NFA create_nfa_group(int& id, NFA inner, int group_idx)
 {
-    State* open  = new State{id++, false};
+    State* open = new State{id++, false};
     State* close = new State{id++, false};
-    open->group_start  = group_idx;
-    close->group_end   = group_idx;
+    open->group_start = group_idx;
+    close->group_end = group_idx;
     open->epsilon.push_back(inner.start);
     inner.end->is_accept = false;
     inner.end->epsilon.push_back(close);
@@ -123,41 +116,48 @@ NFA parse_postfix(const std::vector<Token>& postfix)
                 st.push(create_nfa_charclass(state_count, tok.char_set));
                 break;
             case TokenType::Star: {
-                NFA prev = st.top(); st.pop();
+                NFA prev = st.top();
+                st.pop();
                 st.push(create_nfa_kleene_star(state_count, prev));
                 break;
             }
             case TokenType::Plus: {
-                NFA prev = st.top(); st.pop();
+                NFA prev = st.top();
+                st.pop();
                 st.push(create_nfa_plus(state_count, prev));
                 break;
             }
             case TokenType::Question: {
-                NFA prev = st.top(); st.pop();
+                NFA prev = st.top();
+                st.pop();
                 st.push(create_nfa_question(state_count, prev));
                 break;
             }
             case TokenType::Repeat: {
-                NFA prev = st.top(); st.pop();
-                st.push(create_nfa_repeat(state_count, prev,
-                                          tok.repeat_min, tok.repeat_max));
+                NFA prev = st.top();
+                st.pop();
+                st.push(create_nfa_repeat(state_count, prev, tok.repeat_min, tok.repeat_max));
                 break;
             }
             case TokenType::Lookahead: {
-                NFA inner = st.top(); st.pop();
+                NFA inner = st.top();
+                st.pop();
                 st.push(create_nfa_lookahead(state_count, inner, false));
                 break;
             }
             case TokenType::NegLookahead: {
-                NFA inner = st.top(); st.pop();
+                NFA inner = st.top();
+                st.pop();
                 st.push(create_nfa_lookahead(state_count, inner, true));
                 break;
             }
             case TokenType::Lazy: {
                 if (!st.empty()) {
-                    NFA top = st.top(); st.pop();
+                    NFA top = st.top();
+                    st.pop();
                     if (!st.empty()) {
-                        NFA base = st.top(); st.pop();
+                        NFA base = st.top();
+                        st.pop();
                         st.push(create_nfa_lazy_star(state_count, base));
                     } else {
                         st.push(create_nfa_lazy_star(state_count, top));
@@ -166,14 +166,18 @@ NFA parse_postfix(const std::vector<Token>& postfix)
                 break;
             }
             case TokenType::Union: {
-                NFA second = st.top(); st.pop();
-                NFA first  = st.top(); st.pop();
+                NFA second = st.top();
+                st.pop();
+                NFA first = st.top();
+                st.pop();
                 st.push(create_nfa_union(state_count, first, second));
                 break;
             }
             case TokenType::Concat: {
-                NFA second = st.top(); st.pop();
-                NFA first  = st.top(); st.pop();
+                NFA second = st.top();
+                st.pop();
+                NFA first = st.top();
+                st.pop();
                 st.push(create_nfa_concat(state_count, first, second));
                 break;
             }
@@ -196,21 +200,21 @@ std::set<State*> epsilon_closure(const std::set<State*>& states)
     for (State* s : states) stk.push(s);
 
     while (!stk.empty()) {
-        State* curr = stk.top(); stk.pop();
+        State* curr = stk.top();
+        stk.pop();
         for (State* next : curr->epsilon) {
-            if (closure.insert(next).second)
-                stk.push(next);
+            if (closure.insert(next).second) stk.push(next);
         }
     }
     return closure;
 }
 
-static bool is_word(char c) {
+static bool is_word(char c)
+{
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
 }
 
-static std::set<State*> boundary_filter(const std::set<State*>& states,
-                                        char prev, char curr_c)
+static std::set<State*> boundary_filter(const std::set<State*>& states, char prev, char curr_c)
 {
     std::set<State*> result;
     bool prev_word = is_word(prev);
@@ -234,10 +238,8 @@ bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags)
         bool dotall = bishop::has_flag(flags, bishop::Flag::DOTALL);
         for (State* s : current) {
             auto it = s->transitions.find(c);
-            if (it != s->transitions.end())
-                next.insert(it->second);
-            if (s->any_transition && (dotall || c != '\n'))
-                next.insert(s->any_transition);
+            if (it != s->transitions.end()) next.insert(it->second);
+            if (s->any_transition && (dotall || c != '\n')) next.insert(s->any_transition);
         }
         current = epsilon_closure(next);
         if (current.empty()) return false;
@@ -252,7 +254,7 @@ bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags)
 NFA create_nfa_literal(int& id, char ch)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->transitions[ch] = end;
     return {start, end};
 }
@@ -260,7 +262,7 @@ NFA create_nfa_literal(int& id, char ch)
 NFA create_nfa_dot(int& id)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->any_transition = end;
     return {start, end};
 }
@@ -268,16 +270,14 @@ NFA create_nfa_dot(int& id)
 NFA create_nfa_charclass(int& id, const std::vector<bool>& charset)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
 
     char buf[128];
-    int  n = 0;
+    int n = 0;
     for (int i = 0; i < 256; ++i) {
-        if (charset[i])
-            buf[n++] = static_cast<char>(i);
+        if (charset[i]) buf[n++] = static_cast<char>(i);
     }
-    for (int i = 0; i < n; ++i)
-        start->transitions[static_cast<unsigned char>(buf[i])] = end;
+    for (int i = 0; i < n; ++i) start->transitions[static_cast<unsigned char>(buf[i])] = end;
 
     return {start, end};
 }
@@ -285,10 +285,10 @@ NFA create_nfa_charclass(int& id, const std::vector<bool>& charset)
 NFA create_nfa_union(int& id, NFA first, NFA second)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(first.start);
     start->epsilon.push_back(second.start);
-    first.end->is_accept  = false;
+    first.end->is_accept = false;
     second.end->is_accept = false;
     first.end->epsilon.push_back(end);
     second.end->epsilon.push_back(end);
@@ -298,7 +298,7 @@ NFA create_nfa_union(int& id, NFA first, NFA second)
 NFA create_nfa_kleene_star(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(first.start);
     start->epsilon.push_back(end);
     first.end->is_accept = false;
@@ -310,7 +310,7 @@ NFA create_nfa_kleene_star(int& id, NFA first)
 NFA create_nfa_plus(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(first.start);
     first.end->is_accept = false;
     first.end->epsilon.push_back(first.start);
@@ -321,7 +321,7 @@ NFA create_nfa_plus(int& id, NFA first)
 NFA create_nfa_question(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(first.start);
     start->epsilon.push_back(end);
     first.end->is_accept = false;
@@ -341,16 +341,15 @@ NFA create_nfa_concat(int& id, NFA first, NFA second)
 NFA create_nfa_lookahead(int& id, NFA inner, bool negative)
 {
     State* s = new State{id++, true};
-    s->look     = negative ? LookType::NegAhead : LookType::Ahead;
+    s->look = negative ? LookType::NegAhead : LookType::Ahead;
     s->look_nfa = new NFA{inner.start, inner.end};
     return {s, s};
 }
 
-
 NFA create_nfa_lazy_star(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(end);
     start->epsilon.push_back(first.start);
     first.end->is_accept = false;
@@ -362,7 +361,7 @@ NFA create_nfa_lazy_star(int& id, NFA first)
 NFA create_nfa_lazy_plus(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(first.start);
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
@@ -373,12 +372,124 @@ NFA create_nfa_lazy_plus(int& id, NFA first)
 NFA create_nfa_lazy_question(int& id, NFA first)
 {
     State* start = new State{id++, false};
-    State* end   = new State{id++, true};
+    State* end = new State{id++, true};
     start->epsilon.push_back(end);
     start->epsilon.push_back(first.start);
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
     return {start, end};
+}
+
+}  // namespace nfa
+
+cat >> / home / claude / bishop2 / bishop / src / nfa.cpp << 'SRCEOF'
+
+           // ---------------------------------------------------------------------------
+           // Capture-aware NFA simulation
+           // ---------------------------------------------------------------------------
+
+           namespace
+{
+    using Caps = std::vector<std::pair<size_t, size_t>>;
+
+    struct CThread {
+        nfa::State* s;
+        Caps caps;
+    };
+
+    /// Recursively follow epsilon transitions from `st`, updating capture group
+    /// boundaries as group-open/close marker states are traversed.
+    /// `visited` prevents looping on epsilon cycles.
+    static void eps_expand(std::vector<CThread> & dest, nfa::State * st, Caps caps, size_t pos,
+                           std::unordered_set<nfa::State*>& visited, int max_group)
+    {
+        if (!visited.insert(st).second) return;
+
+        // Update capture boundaries for group-marker states.
+        if (st->group_start >= 0 && st->group_start < max_group) caps[static_cast<size_t>(st->group_start)].first = pos;
+        if (st->group_end >= 0 && st->group_end < max_group) caps[static_cast<size_t>(st->group_end)].second = pos;
+
+        dest.push_back({st, caps});
+
+        for (nfa::State* e : st->epsilon) eps_expand(dest, e, caps, pos, visited, max_group);
+    }
+
+    /// Determine the maximum number of capture groups in an NFA.
+    static int max_group_count(nfa::State * root)
+    {
+        int mx = 0;
+        std::unordered_set<nfa::State*> visited;
+        std::stack<nfa::State*> stk;
+        stk.push(root);
+        while (!stk.empty()) {
+            nfa::State* s = stk.top();
+            stk.pop();
+            if (!visited.insert(s).second) continue;
+            if (s->group_start >= 0) mx = std::max(mx, s->group_start + 1);
+            if (s->group_end >= 0) mx = std::max(mx, s->group_end + 1);
+            for (nfa::State* e : s->epsilon) stk.push(e);
+            for (auto& [c, d] : s->transitions) stk.push(d);
+            if (s->any_transition) stk.push(s->any_transition);
+        }
+        return mx;
+    }
+}
+
+namespace nfa {
+
+MatchData nfa_match_captures(NFA& nfa, const std::string& input, size_t from, bishop::Flag flags)
+{
+    MatchData result;
+    if (!nfa.start) return result;
+
+    const int max_g = max_group_count(nfa.start);
+
+    auto init_caps = [&]() { return Caps(static_cast<size_t>(max_g), {std::string::npos, std::string::npos}); };
+
+    const bool dotall = bishop::has_flag(flags, bishop::Flag::DOTALL);
+
+    std::vector<CThread> cur, nxt;
+    cur.reserve(64);
+    nxt.reserve(64);
+
+    {
+        std::unordered_set<State*> vis;
+        eps_expand(cur, nfa.start, init_caps(), from, vis, max_g);
+    }
+
+    for (size_t i = from; i <= input.size(); ++i) {
+        for (const CThread& t : cur) {
+            if (t.s->is_accept) {
+                if (!result.matched || i > result.end) {
+                    result.matched = true;
+                    result.start = from;
+                    result.end = i;
+                    result.groups = t.caps;
+                }
+            }
+        }
+        if (i == input.size()) break;
+
+        const char c = input[i];
+        nxt.clear();
+
+        for (const CThread& t : cur) {
+            auto advance = [&](State* dst) {
+                std::unordered_set<State*> vis;
+                eps_expand(nxt, dst, t.caps, i + 1, vis, max_g);
+            };
+
+            auto it = t.s->transitions.find(c);
+            if (it != t.s->transitions.end()) advance(it->second);
+
+            if (t.s->any_transition && (dotall || c != '\n')) advance(t.s->any_transition);
+        }
+
+        cur.swap(nxt);
+        if (cur.empty()) break;
+    }
+
+    return result;
 }
 
 }  // namespace nfa

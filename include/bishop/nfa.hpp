@@ -1,17 +1,17 @@
 #include "bishop/flags.hpp"
 #ifndef NFA_H_
-#define NFA_H_
+    #define NFA_H_
 
-#include <set>
-#include <vector>
-#include <unordered_map>
+    #include <set>
+    #include <unordered_map>
+    #include <vector>
 
-#include "tokenizer.hpp"
+    #include "tokenizer.hpp"
 
 namespace nfa {
 
 enum class BoundaryType { None, WordBoundary, NonWordBoundary };
-enum class LookType    { None, Ahead, NegAhead };
+enum class LookType { None, Ahead, NegAhead };
 
 struct State {
     int id;
@@ -19,11 +19,11 @@ struct State {
     std::unordered_map<char, State*> transitions;
     std::vector<State*> epsilon;
     State* any_transition{nullptr};
-    int          group_start{-1};
-    int          group_end{-1};
+    int group_start{-1};
+    int group_end{-1};
     BoundaryType boundary{BoundaryType::None};
-    LookType     look{LookType::None};
-    NFA*         look_nfa{nullptr};
+    LookType look{LookType::None};
+    NFA* look_nfa{nullptr};
 };
 
 struct NFA {
@@ -48,13 +48,31 @@ NFA create_nfa_lazy_question(int& id, NFA first);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);
-bool nfa_match(NFA& nfa, const std::string& input,
-               bishop::Flag flags = bishop::Flag::NONE);
+bool nfa_match(NFA& nfa, const std::string& input, bishop::Flag flags = bishop::Flag::NONE);
 
 struct SimThread {
-    State*                   state;
-    std::vector<std::pair<size_t,size_t>> captures;
+    State* state;
+    std::vector<std::pair<size_t, size_t>> captures;
 };
 
 }  // namespace nfa
 #endif
+
+struct MatchData {
+    bool matched{false};
+    size_t start{std::string::npos};
+    size_t end{std::string::npos};
+    std::vector<std::pair<size_t, size_t>> groups;
+
+    size_t group_count() const noexcept
+    {
+        return groups.size();
+    }
+    bool group_matched(size_t i) const noexcept
+    {
+        return i < groups.size() && groups[i].first != std::string::npos && groups[i].second != std::string::npos;
+    }
+};
+
+MatchData nfa_match_captures(NFA& nfa, const std::string& input, size_t from = 0,
+                             bishop::Flag flags = bishop::Flag::NONE);
