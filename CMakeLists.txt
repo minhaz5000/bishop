@@ -9,7 +9,7 @@ option(BISHOP_BUILD_TESTS  "Build unit tests"   ON)
 option(BISHOP_BUILD_BENCH  "Build benchmarks"   ON)
 option(BISHOP_ASAN         "Enable AddressSanitizer" OFF)
 option(BISHOP_UBSAN        "Enable UBSanitizer"      OFF)
-option(BISHOP_BUILD_FUZZERS "Build libFuzzer targets" ON)
+option(BISHOP_BUILD_FUZZERS "Build libFuzzer targets" OFF)
 
 if(BISHOP_ASAN)
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
