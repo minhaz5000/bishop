@@ -96,6 +96,13 @@ if(BISHOP_BUILD_FUZZERS)
         lexer_fuzzer
         dfa_fuzzer
         unicode_fuzzer
+        rewriter_fuzzer
+        splitter_fuzzer
+        analyzer_fuzzer
+        serializer_fuzzer
+        optimizer_fuzzer
+        token_stream_fuzzer
+        cache_fuzzer
     )
         add_executable(${fuzzer} fuzz/${fuzzer}.cc)
         target_link_libraries(${fuzzer} PRIVATE bishop_core)

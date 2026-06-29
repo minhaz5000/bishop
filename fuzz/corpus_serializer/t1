@@ -1,0 +1,5 @@
+states 2
+start 0
+state 0 non-accept
+transition 0 97 1
+state 1 accept

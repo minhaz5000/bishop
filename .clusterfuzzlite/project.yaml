@@ -7,3 +7,10 @@ fuzz_targets:
   - dfa_fuzzer
   - lexer_fuzzer
   - unicode_fuzzer
+  - rewriter_fuzzer
+  - splitter_fuzzer
+  - analyzer_fuzzer
+  - serializer_fuzzer
+  - optimizer_fuzzer
+  - token_stream_fuzzer
+  - cache_fuzzer
