@@ -20,6 +20,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         tokens = tokenizer::insert_concats(tokens);
         auto pf = tokenizer::to_postfix(tokens);
         auto n = nfa::parse_postfix(pf);
+        struct NfaGuard {
+            nfa::NFA& n;
+            ~NfaGuard()
+            {
+                nfa::free_nfa(n);
+            }
+        } nfa_guard{n};
 
         const auto pre = bishop::optimizer::nfa_stats(n);
         (void)bishop::optimizer::count_dead_states(n);
