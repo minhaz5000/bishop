@@ -289,7 +289,7 @@ std::vector<Token> tokenize(const std::string& s, bishop::Flag flags)
                     break;
             }
         }
-        ++it;
+        if (it != s.cend()) ++it;
     }
     return tokens;
 }

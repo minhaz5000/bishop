@@ -14,7 +14,9 @@ static dfa::DFA compile(const std::string& pat)
     strip_anchors(t);
     t = insert_concats(t);
     auto n = nfa::parse_postfix(to_postfix(t));
-    return dfa::nfa_to_dfa(n);
+    dfa::DFA d = dfa::nfa_to_dfa(n);
+    nfa::free_nfa(n);
+    return d;
 }
 
 TEST(binary_roundtrip_literal)

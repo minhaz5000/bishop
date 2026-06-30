@@ -21,8 +21,71 @@ public:
         compile(pattern, flags);
     }
 
+    Regex(const Regex& other)
+        : flags_(other.flags_),
+          anchored_start_(other.anchored_start_),
+          anchored_end_(other.anchored_end_),
+          pattern_(other.pattern_)
+    {
+        if (other.nfa_.start) {
+            int id = 0;
+            nfa_ = nfa::clone_nfa(id, other.nfa_);
+        }
+    }
+
+    Regex& operator=(const Regex& other)
+    {
+        if (this == &other) return *this;
+
+        nfa::NFA cloned{nullptr, nullptr};
+        if (other.nfa_.start) {
+            int id = 0;
+            cloned = nfa::clone_nfa(id, other.nfa_);
+        }
+
+        if (nfa_.start) nfa::free_nfa(nfa_);
+        nfa_ = cloned;
+        flags_ = other.flags_;
+        anchored_start_ = other.anchored_start_;
+        anchored_end_ = other.anchored_end_;
+        pattern_ = other.pattern_;
+        return *this;
+    }
+
+    Regex(Regex&& other) noexcept
+        : nfa_(other.nfa_),
+          flags_(other.flags_),
+          anchored_start_(other.anchored_start_),
+          anchored_end_(other.anchored_end_),
+          pattern_(std::move(other.pattern_))
+    {
+        other.nfa_ = {nullptr, nullptr};
+    }
+
+    Regex& operator=(Regex&& other) noexcept
+    {
+        if (this == &other) return *this;
+
+        if (nfa_.start) nfa::free_nfa(nfa_);
+        nfa_ = other.nfa_;
+        flags_ = other.flags_;
+        anchored_start_ = other.anchored_start_;
+        anchored_end_ = other.anchored_end_;
+        pattern_ = std::move(other.pattern_);
+        other.nfa_ = {nullptr, nullptr};
+        return *this;
+    }
+
+    ~Regex()
+    {
+        if (nfa_.start) nfa::free_nfa(nfa_);
+    }
+
     void compile(const std::string& pattern, Flag flags = Flag::NONE)
     {
+        if (nfa_.start) {
+            nfa::free_nfa(nfa_);
+        }
         try {
             flags_ = flags;
             auto tokens = tokenizer::tokenize(pattern, flags);

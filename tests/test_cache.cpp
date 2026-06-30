@@ -7,12 +7,22 @@ using bishop::Flag;
 using bishop::cache::LRUCache;
 using bishop::cache::PatternCache;
 
-static nfa::NFA compile_nfa(const std::string& pat)
+struct ScopedNfa {
+    nfa::NFA value;
+    explicit ScopedNfa(nfa::NFA n) : value(n) {}
+    ScopedNfa(const ScopedNfa&) = delete;
+    ScopedNfa& operator=(const ScopedNfa&) = delete;
+    ScopedNfa(ScopedNfa&& other) noexcept : value(other.value) { other.value = {nullptr, nullptr}; }
+    ~ScopedNfa() { nfa::free_nfa(value); }
+    operator nfa::NFA&() { return value; }
+};
+
+static ScopedNfa compile_nfa(const std::string& pat)
 {
     auto t = tokenizer::tokenize(pat);
     tokenizer::strip_anchors(t);
     t = tokenizer::insert_concats(t);
-    return nfa::parse_postfix(tokenizer::to_postfix(t));
+    return ScopedNfa(nfa::parse_postfix(tokenizer::to_postfix(t)));
 }
 
 TEST(lru_cache_put_get)

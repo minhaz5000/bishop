@@ -126,16 +126,21 @@ OptStats collapse_epsilon_chains(nfa::NFA& n)
     OptStats stats = nfa_stats(n);
     auto states = all_states(n);
 
+    std::unordered_set<nfa::State*> bypassed;
+
     size_t collapsed = 0;
     for (nfa::State* s : states) {
         for (size_t i = 0; i < s->epsilon.size(); ++i) {
             nfa::State* tgt = s->epsilon[i];
             if (tgt->transitions.empty() && !tgt->any_transition && tgt->epsilon.size() == 1 && !tgt->is_accept) {
                 s->epsilon[i] = tgt->epsilon[0];
+                bypassed.insert(tgt);
                 ++collapsed;
             }
         }
     }
+
+    for (nfa::State* tgt : bypassed) delete tgt;
 
     stats.epsilon_chains_collapsed = collapsed;
     stats.epsilon_after = stats.epsilon_before;

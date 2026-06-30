@@ -49,6 +49,10 @@ NFA create_nfa_lazy_plus(int& id, NFA first);
 NFA create_nfa_lazy_question(int& id, NFA first);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
+NFA clone_nfa(int& id, const NFA& src);
+
+void free_nfa(NFA& nfa);
+
 std::set<State*> epsilon_closure(const std::set<State*>& states);
 bool nfa_match(const NFA& nfa, const std::string& input, bishop::Flag flags = bishop::Flag::NONE);
 

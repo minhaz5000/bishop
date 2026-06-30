@@ -44,20 +44,20 @@ DFA nfa_to_dfa(nfa::NFA& n)
 
     std::vector<StateSet> id_to_set;
     id_to_set.push_back(s0);
-
     while (!worklist.empty()) {
         int sid = worklist.front();
         worklist.pop();
-        const StateSet& cur = id_to_set[sid];
 
         for (int c = 0; c < 256; ++c) {
-            StateSet mv = move_on(cur, static_cast<unsigned char>(c));
+            StateSet mv = move_on(id_to_set[sid], static_cast<unsigned char>(c));
             if (mv.empty()) continue;
+
             StateSet nx = nfa::epsilon_closure(mv);
             if (nx.empty()) continue;
 
             auto it = seen.find(nx);
             int nid;
+
             if (it == seen.end()) {
                 nid = static_cast<int>(d.states.size());
                 seen[nx] = nid;
@@ -67,9 +67,11 @@ DFA nfa_to_dfa(nfa::NFA& n)
             } else {
                 nid = it->second;
             }
+
             d.states[sid].transitions[static_cast<unsigned char>(c)] = nid;
         }
     }
+
     return d;
 }
 

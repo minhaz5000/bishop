@@ -6,12 +6,31 @@
 using namespace bishop::optimizer;
 using namespace tokenizer;
 
-static nfa::NFA compile(const std::string& pat)
+struct ScopedNfa {
+    nfa::NFA value;
+    explicit ScopedNfa(nfa::NFA n) : value(n) {}
+    ScopedNfa(const ScopedNfa&) = delete;
+    ScopedNfa& operator=(const ScopedNfa&) = delete;
+    ScopedNfa(ScopedNfa&& other) noexcept : value(other.value)
+    {
+        other.value = {nullptr, nullptr};
+    }
+    ~ScopedNfa()
+    {
+        nfa::free_nfa(value);
+    }
+    operator nfa::NFA&()
+    {
+        return value;
+    }
+};
+
+static ScopedNfa compile(const std::string& pat)
 {
     auto t = tokenize(pat);
     strip_anchors(t);
     t = insert_concats(t);
-    return nfa::parse_postfix(to_postfix(t));
+    return ScopedNfa(nfa::parse_postfix(to_postfix(t)));
 }
 
 TEST(nfa_stats_literal)

@@ -12,7 +12,9 @@ static dfa::DFA compile(const std::string& pattern)
     tokens = insert_concats(tokens);
     auto postfix = to_postfix(tokens);
     auto nfa = nfa::parse_postfix(postfix);
-    return dfa::nfa_to_dfa(nfa);
+    dfa::DFA d = dfa::nfa_to_dfa(nfa);
+    nfa::free_nfa(nfa);
+    return d;
 }
 
 static bool DM(const std::string& pat, const std::string& text)

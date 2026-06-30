@@ -14,12 +14,31 @@ using bishop::debug::nfa_transition_count;
 using bishop::debug::print_dfa_text;
 using bishop::debug::print_nfa_text;
 
-static nfa::NFA compile_nfa(const std::string& pat)
+struct ScopedNfa {
+    nfa::NFA value;
+    explicit ScopedNfa(nfa::NFA n) : value(n) {}
+    ScopedNfa(const ScopedNfa&) = delete;
+    ScopedNfa& operator=(const ScopedNfa&) = delete;
+    ScopedNfa(ScopedNfa&& other) noexcept : value(other.value)
+    {
+        other.value = {nullptr, nullptr};
+    }
+    ~ScopedNfa()
+    {
+        nfa::free_nfa(value);
+    }
+    operator nfa::NFA&()
+    {
+        return value;
+    }
+};
+
+static ScopedNfa compile_nfa(const std::string& pat)
 {
     auto t = tokenize(pat);
     strip_anchors(t);
     t = insert_concats(t);
-    return nfa::parse_postfix(to_postfix(t));
+    return ScopedNfa(nfa::parse_postfix(to_postfix(t)));
 }
 
 static dfa::DFA compile_dfa(const std::string& pat)

@@ -31,12 +31,13 @@ static std::vector<State*> collect_states(State* root)
 
         for (State* e : s->epsilon) stk.push(e);
         for (auto& [ch, dst] : s->transitions) stk.push(dst);
+        if (s->any_transition) stk.push(s->any_transition);
     }
 
     return result;
 }
 
-static NFA clone_nfa(int& id, const NFA& src)
+NFA clone_nfa(int& id, const NFA& src)
 {
     auto states = collect_states(src.start);
 
@@ -54,6 +55,26 @@ static NFA clone_nfa(int& id, const NFA& src)
     }
 
     return {mapping[src.start], mapping[src.end]};
+}
+
+void free_nfa(NFA& nfa)
+{
+    if (!nfa.start) return;
+
+    std::vector<State*> states = collect_states(nfa.start);
+
+    for (State* s : states) {
+        if (s->look_nfa) {
+            free_nfa(*s->look_nfa);
+            delete s->look_nfa;
+            s->look_nfa = nullptr;
+        }
+    }
+
+    for (State* s : states) delete s;
+
+    nfa.start = nullptr;
+    nfa.end = nullptr;
 }
 
 NFA create_nfa_repeat(int& id, const NFA& base, int min_rep, int max_rep)
@@ -92,103 +113,119 @@ NFA parse_postfix(const std::vector<Token>& postfix)
     std::stack<NFA> st;
     int state_count = 0;
 
-    for (const auto& tok : postfix) {
-        switch (tok.type) {
-            case TokenType::Literal:
-                st.push(create_nfa_literal(state_count, tok.value));
-                break;
-            case TokenType::Dot:
-                st.push(create_nfa_dot(state_count));
-                break;
-            case TokenType::WordBoundary: {
-                State* s = new State{state_count++, true};
-                s->boundary = BoundaryType::WordBoundary;
-                st.push(NFA{s, s});
-                break;
-            }
-            case TokenType::NonWordBoundary: {
-                State* s = new State{state_count++, true};
-                s->boundary = BoundaryType::NonWordBoundary;
-                st.push(NFA{s, s});
-                break;
-            }
-            case TokenType::CharClass:
-                st.push(create_nfa_charclass(state_count, tok.char_set));
-                break;
-            case TokenType::Star: {
-                if (st.empty()) throw bishop::ParseError("missing operand for '*'");
-                NFA prev = st.top();
-                st.pop();
-                st.push(create_nfa_kleene_star(state_count, prev));
-                break;
-            }
-            case TokenType::Plus: {
-                if (st.empty()) throw bishop::ParseError("missing operand for '+'");
-                NFA prev = st.top();
-                st.pop();
-                st.push(create_nfa_plus(state_count, prev));
-                break;
-            }
-            case TokenType::Question: {
-                if (st.empty()) throw bishop::ParseError("missing operand for '?'");
-                NFA prev = st.top();
-                st.pop();
-                st.push(create_nfa_question(state_count, prev));
-                break;
-            }
-            case TokenType::Repeat: {
-                if (st.empty()) throw bishop::ParseError("missing operand for '{n,m}'");
-                NFA prev = st.top();
-                st.pop();
-                st.push(create_nfa_repeat(state_count, prev, tok.repeat_min, tok.repeat_max));
-                break;
-            }
-            case TokenType::Lookahead: {
-                if (st.empty()) throw bishop::ParseError("missing operand for '(?=...)'");
-                NFA inner = st.top();
-                st.pop();
-                st.push(create_nfa_lookahead(state_count, inner, false));
-                break;
-            }
-            case TokenType::NegLookahead: {
-                if (st.empty()) throw bishop::ParseError("missing operand for '(?!...)'");
-                NFA inner = st.top();
-                st.pop();
-                st.push(create_nfa_lookahead(state_count, inner, true));
-                break;
-            }
-            case TokenType::Lazy: {
-                if (!st.empty()) {
-                    NFA top = st.top();
-                    st.pop();
-                    st.push(create_nfa_lazy_star(state_count, top));
-                }
-                break;
-            }
-            case TokenType::Union: {
-                if (st.size() < 2) throw bishop::ParseError("missing operand for '|'");
-                NFA second = st.top();
-                st.pop();
-                NFA first = st.top();
-                st.pop();
-                st.push(create_nfa_union(state_count, first, second));
-                break;
-            }
-            case TokenType::Concat: {
-                if (st.size() < 2) throw bishop::ParseError("missing operand for concatenation");
-                NFA second = st.top();
-                st.pop();
-                NFA first = st.top();
-                st.pop();
-                st.push(create_nfa_concat(state_count, first, second));
-                break;
-            }
-            default:
-                throw bishop::ParseError("unknown token in postfix stream");
+    auto free_stack = [&st]() {
+        while (!st.empty()) {
+            NFA n = st.top();
+            st.pop();
+            free_nfa(n);
         }
+    };
+
+    try {
+        for (const auto& tok : postfix) {
+            switch (tok.type) {
+                case TokenType::Literal:
+                    st.push(create_nfa_literal(state_count, tok.value));
+                    break;
+                case TokenType::Dot:
+                    st.push(create_nfa_dot(state_count));
+                    break;
+                case TokenType::WordBoundary: {
+                    State* s = new State{state_count++, true};
+                    s->boundary = BoundaryType::WordBoundary;
+                    st.push(NFA{s, s});
+                    break;
+                }
+                case TokenType::NonWordBoundary: {
+                    State* s = new State{state_count++, true};
+                    s->boundary = BoundaryType::NonWordBoundary;
+                    st.push(NFA{s, s});
+                    break;
+                }
+                case TokenType::CharClass:
+                    st.push(create_nfa_charclass(state_count, tok.char_set));
+                    break;
+                case TokenType::Star: {
+                    if (st.empty()) throw bishop::ParseError("missing operand for '*'");
+                    NFA prev = st.top();
+                    st.pop();
+                    st.push(create_nfa_kleene_star(state_count, prev));
+                    break;
+                }
+                case TokenType::Plus: {
+                    if (st.empty()) throw bishop::ParseError("missing operand for '+'");
+                    NFA prev = st.top();
+                    st.pop();
+                    st.push(create_nfa_plus(state_count, prev));
+                    break;
+                }
+                case TokenType::Question: {
+                    if (st.empty()) throw bishop::ParseError("missing operand for '?'");
+                    NFA prev = st.top();
+                    st.pop();
+                    st.push(create_nfa_question(state_count, prev));
+                    break;
+                }
+                case TokenType::Repeat: {
+                    if (st.empty()) throw bishop::ParseError("missing operand for '{n,m}'");
+                    NFA prev = st.top();
+                    st.pop();
+                    st.push(create_nfa_repeat(state_count, prev, tok.repeat_min, tok.repeat_max));
+                    free_nfa(prev);
+                    break;
+                }
+                case TokenType::Lookahead: {
+                    if (st.empty()) throw bishop::ParseError("missing operand for '(?=...)'");
+                    NFA inner = st.top();
+                    st.pop();
+                    st.push(create_nfa_lookahead(state_count, inner, false));
+                    break;
+                }
+                case TokenType::NegLookahead: {
+                    if (st.empty()) throw bishop::ParseError("missing operand for '(?!...)'");
+                    NFA inner = st.top();
+                    st.pop();
+                    st.push(create_nfa_lookahead(state_count, inner, true));
+                    break;
+                }
+                case TokenType::Lazy: {
+                    if (!st.empty()) {
+                        NFA top = st.top();
+                        st.pop();
+                        st.push(create_nfa_lazy_star(state_count, top));
+                    }
+                    break;
+                }
+                case TokenType::Union: {
+                    if (st.size() < 2) throw bishop::ParseError("missing operand for '|'");
+                    NFA second = st.top();
+                    st.pop();
+                    NFA first = st.top();
+                    st.pop();
+                    st.push(create_nfa_union(state_count, first, second));
+                    break;
+                }
+                case TokenType::Concat: {
+                    if (st.size() < 2) throw bishop::ParseError("missing operand for concatenation");
+                    NFA second = st.top();
+                    st.pop();
+                    NFA first = st.top();
+                    st.pop();
+                    st.push(create_nfa_concat(state_count, first, second));
+                    break;
+                }
+                default:
+                    throw bishop::ParseError("unknown token in postfix stream");
+            }
+        }
+    }
+    catch (...) {
+        free_stack();
+        throw;
     }
 
     if (st.size() != 1) {
+        free_stack();
         throw bishop::ParseError("malformed postfix expression (stack size " + std::to_string(st.size()) + " at end)");
     }
 
@@ -274,12 +311,11 @@ NFA create_nfa_charclass(int& id, const std::vector<bool>& charset)
     State* start = new State{id++, false};
     State* end = new State{id++, true};
 
-    char buf[128];
-    int n = 0;
-    for (int i = 0; i < 256; ++i) {
-        if (charset[i]) buf[n++] = static_cast<char>(i);
+    for (size_t i = 0; i < charset.size(); ++i) {
+        if (charset[i]) {
+            start->transitions[static_cast<unsigned char>(i)] = end;
+        }
     }
-    for (int i = 0; i < n; ++i) start->transitions[static_cast<unsigned char>(buf[i])] = end;
 
     return {start, end};
 }
