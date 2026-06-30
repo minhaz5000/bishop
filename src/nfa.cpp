@@ -268,6 +268,8 @@ static std::set<State*> boundary_filter(const std::set<State*>& states, char pre
 
 bool nfa_match(const NFA& nfa, const std::string& input, bishop::Flag flags)
 {
+    if (!nfa.start) return input.empty();
+
     std::set<State*> current = epsilon_closure({nfa.start});
 
     for (char c : input) {
