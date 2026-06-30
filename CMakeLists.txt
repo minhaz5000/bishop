@@ -93,16 +93,15 @@ endif()
 if(BISHOP_BUILD_FUZZERS)
     foreach(fuzzer
         regex_fuzzer
-        lexer_fuzzer
-        dfa_fuzzer
         unicode_fuzzer
-        rewriter_fuzzer
-        splitter_fuzzer
-        analyzer_fuzzer
+        rewriter_identity_fuzzer
+        splitter_roundtrip_fuzzer
         serializer_fuzzer
         optimizer_fuzzer
         token_stream_fuzzer
         cache_fuzzer
+        clone_struct_equiv_fuzzer
+        repr_equiv_fuzzer
     )
         add_executable(${fuzzer} fuzz/${fuzzer}.cc)
         target_link_libraries(${fuzzer} PRIVATE bishop_core)

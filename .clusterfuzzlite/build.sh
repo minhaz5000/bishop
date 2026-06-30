@@ -9,20 +9,36 @@ for src in src/*.cpp; do
     OBJECTS="$OBJECTS $obj"
 done
 
-for fuzz in regex dfa lexer unicode rewriter splitter analyzer serializer optimizer token_stream cache; do
-    if [ -f "fuzz/${fuzz}_fuzzer.cc" ]; then
-        $CXX $COMMON_FLAGS \
-            $LIB_FUZZING_ENGINE \
-            "fuzz/${fuzz}_fuzzer.cc" \
-            $OBJECTS \
-            -o "$OUT/${fuzz}_fuzzer"
-    fi
+for fuzz_src in fuzz/*_fuzzer.cc; do
+    name="$(basename "${fuzz_src%.cc}")"
+    $CXX $COMMON_FLAGS \
+        $LIB_FUZZING_ENGINE \
+        "$fuzz_src" \
+        $OBJECTS \
+        -o "$OUT/${name}"
 done
 
-# Copy seed corpora that exist
-for fuzz in regex dfa lexer unicode rewriter splitter analyzer serializer optimizer token_stream cache; do
-    corpus_dir="fuzz/corpus_${fuzz}"
-    if [ -d "$corpus_dir" ]; then
-        zip -j "$OUT/${fuzz}_fuzzer_seed_corpus.zip" "$corpus_dir"/*
+for fuzz_src in fuzz/*_fuzzer.cc; do
+    name="$(basename "${fuzz_src%.cc}")"
+    short="${name%_fuzzer}"
+    candidates=(
+        "fuzz/corpus_${name}"
+        "fuzz/corpus_${short}"
+        "fuzz/${name}_corpus"
+    )
+    if [ "$short" = "regex" ]; then
+        candidates+=("fuzz/corpus")
     fi
+    if [ "$name" = "rewriter_identity_fuzzer" ]; then
+        candidates+=("fuzz/corpus_rewriter")
+    fi
+    if [ "$name" = "splitter_roundtrip_fuzzer" ]; then
+        candidates+=("fuzz/corpus_splitter")
+    fi
+    for dir in "${candidates[@]}"; do
+        if [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
+            zip -j "$OUT/${name}_seed_corpus.zip" "$dir"/*
+            break
+        fi
+    done
 done

@@ -4,13 +4,12 @@ sanitizers:
   - undefined
 fuzz_targets:
   - regex_fuzzer
-  - dfa_fuzzer
-  - lexer_fuzzer
   - unicode_fuzzer
-  - rewriter_fuzzer
-  - splitter_fuzzer
-  - analyzer_fuzzer
   - serializer_fuzzer
   - optimizer_fuzzer
   - token_stream_fuzzer
   - cache_fuzzer
+  - clone_struct_equiv_fuzzer
+  - repr_equiv_fuzzer
+  - rewriter_identity_fuzzer
+  - splitter_roundtrip_fuzzer

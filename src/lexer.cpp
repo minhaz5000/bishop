@@ -5,13 +5,9 @@
 
 namespace bishop {
 
-static constexpr size_t kScratchBufLen = 512;
-
 static std::string copy_lexeme(const char* src, size_t len)
 {
-    char scratch[kScratchBufLen];
-    std::memcpy(scratch, src, len);
-    return std::string(scratch, len);
+    return std::string(src, len);
 }
 
 void Lexer::add_rule(const std::string& name, const std::string& pattern, Flag flags)
