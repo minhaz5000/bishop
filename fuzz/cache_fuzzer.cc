@@ -1,6 +1,6 @@
-
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "bishop/cache.hpp"
@@ -63,7 +63,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     for (const auto& p : patterns) {
         nfa::NFA n{nullptr, nullptr};
         if (!compile_nfa(p, flags, n)) continue;
-        cache.put_nfa(p, flags, n);
+        cache.put_nfa(p, flags, std::move(n));
         nfa::NFA out{nullptr, nullptr};
         (void)cache.get_nfa(p, flags, out);
     }
@@ -98,7 +98,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     for (const auto& p : patterns) {
         nfa::NFA n{nullptr, nullptr};
         if (!compile_nfa(p, flags, n)) continue;
-        gc.put_nfa(p, flags, n);
+        gc.put_nfa(p, flags, std::move(n));
         nfa::NFA out{nullptr, nullptr};
         (void)gc.get_nfa(p, flags, out);
     }

@@ -18,13 +18,12 @@ class LRUCache {
 public:
     explicit LRUCache(size_t cap = 64) : cap_(cap) {}
 
-    bool get(const K& key, V& out)
+    V* find(const K& key)
     {
         auto it = map_.find(key);
-        if (it == map_.end()) return false;
+        if (it == map_.end()) return nullptr;
         order_.splice(order_.begin(), order_, it->second);
-        out = it->second->second;
-        return true;
+        return &it->second->second;
     }
 
     void put(const K& key, V val)
@@ -105,7 +104,7 @@ public:
     explicit PatternCache(size_t cap = 128);
 
     bool get_nfa(const std::string& pattern, Flag flags, nfa::NFA& out);
-    void put_nfa(const std::string& pattern, Flag flags, const nfa::NFA& n);
+    void put_nfa(const std::string& pattern, Flag flags, nfa::NFA n);
 
     bool get_dfa(const std::string& pattern, Flag flags, dfa::DFA& out);
     void put_dfa(const std::string& pattern, Flag flags, const dfa::DFA& d);

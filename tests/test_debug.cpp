@@ -16,10 +16,10 @@ using bishop::debug::print_nfa_text;
 
 struct ScopedNfa {
     nfa::NFA value;
-    explicit ScopedNfa(nfa::NFA n) : value(n) {}
+    explicit ScopedNfa(nfa::NFA n) : value(std::move(n)) {}
     ScopedNfa(const ScopedNfa&) = delete;
     ScopedNfa& operator=(const ScopedNfa&) = delete;
-    ScopedNfa(ScopedNfa&& other) noexcept : value(other.value)
+    ScopedNfa(ScopedNfa&& other) noexcept : value(std::move(other.value))
     {
         other.value = {nullptr, nullptr};
     }

@@ -4,6 +4,7 @@
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "bishop/error.hpp"
@@ -81,13 +82,13 @@ NFA create_nfa_repeat(int& id, const NFA& base, int min_rep, int max_rep)
 {
     NFA result = clone_nfa(id, base);
 
-    for (int i = 1; i < min_rep; ++i) result = create_nfa_concat(id, result, clone_nfa(id, base));
+    for (int i = 1; i < min_rep; ++i) result = create_nfa_concat(id, std::move(result), clone_nfa(id, base));
 
     if (max_rep < 0) {
-        result = create_nfa_concat(id, result, create_nfa_kleene_star(id, clone_nfa(id, base)));
+        result = create_nfa_concat(id, std::move(result), create_nfa_kleene_star(id, clone_nfa(id, base)));
     } else {
         for (int i = min_rep; i < max_rep; ++i)
-            result = create_nfa_concat(id, result, create_nfa_question(id, clone_nfa(id, base)));
+            result = create_nfa_concat(id, std::move(result), create_nfa_question(id, clone_nfa(id, base)));
     }
 
     return result;
@@ -103,7 +104,9 @@ NFA create_nfa_group(int& id, NFA inner, int group_idx)
     inner.end->is_accept = false;
     inner.end->epsilon.push_back(close);
     close->epsilon.push_back(inner.end);
-    return {open, inner.end};
+    NFA result{open, inner.end};
+    inner.release();
+    return result;
 }
 
 NFA parse_postfix(const std::vector<Token>& postfix)
@@ -114,11 +117,7 @@ NFA parse_postfix(const std::vector<Token>& postfix)
     int state_count = 0;
 
     auto free_stack = [&st]() {
-        while (!st.empty()) {
-            NFA n = st.top();
-            st.pop();
-            free_nfa(n);
-        }
+        while (!st.empty()) st.pop();
     };
 
     try {
@@ -147,71 +146,70 @@ NFA parse_postfix(const std::vector<Token>& postfix)
                     break;
                 case TokenType::Star: {
                     if (st.empty()) throw bishop::ParseError("missing operand for '*'");
-                    NFA prev = st.top();
+                    NFA prev = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_kleene_star(state_count, prev));
+                    st.push(create_nfa_kleene_star(state_count, std::move(prev)));
                     break;
                 }
                 case TokenType::Plus: {
                     if (st.empty()) throw bishop::ParseError("missing operand for '+'");
-                    NFA prev = st.top();
+                    NFA prev = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_plus(state_count, prev));
+                    st.push(create_nfa_plus(state_count, std::move(prev)));
                     break;
                 }
                 case TokenType::Question: {
                     if (st.empty()) throw bishop::ParseError("missing operand for '?'");
-                    NFA prev = st.top();
+                    NFA prev = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_question(state_count, prev));
+                    st.push(create_nfa_question(state_count, std::move(prev)));
                     break;
                 }
                 case TokenType::Repeat: {
                     if (st.empty()) throw bishop::ParseError("missing operand for '{n,m}'");
-                    NFA prev = st.top();
+                    NFA prev = std::move(st.top());
                     st.pop();
                     st.push(create_nfa_repeat(state_count, prev, tok.repeat_min, tok.repeat_max));
-                    free_nfa(prev);
                     break;
                 }
                 case TokenType::Lookahead: {
                     if (st.empty()) throw bishop::ParseError("missing operand for '(?=...)'");
-                    NFA inner = st.top();
+                    NFA inner = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_lookahead(state_count, inner, false));
+                    st.push(create_nfa_lookahead(state_count, std::move(inner), false));
                     break;
                 }
                 case TokenType::NegLookahead: {
                     if (st.empty()) throw bishop::ParseError("missing operand for '(?!...)'");
-                    NFA inner = st.top();
+                    NFA inner = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_lookahead(state_count, inner, true));
+                    st.push(create_nfa_lookahead(state_count, std::move(inner), true));
                     break;
                 }
                 case TokenType::Lazy: {
                     if (!st.empty()) {
-                        NFA top = st.top();
+                        NFA top = std::move(st.top());
                         st.pop();
-                        st.push(create_nfa_lazy_star(state_count, top));
+                        st.push(create_nfa_lazy_star(state_count, std::move(top)));
                     }
                     break;
                 }
                 case TokenType::Union: {
                     if (st.size() < 2) throw bishop::ParseError("missing operand for '|'");
-                    NFA second = st.top();
+                    NFA second = std::move(st.top());
                     st.pop();
-                    NFA first = st.top();
+                    NFA first = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_union(state_count, first, second));
+                    st.push(create_nfa_union(state_count, std::move(first), std::move(second)));
                     break;
                 }
                 case TokenType::Concat: {
                     if (st.size() < 2) throw bishop::ParseError("missing operand for concatenation");
-                    NFA second = st.top();
+                    NFA second = std::move(st.top());
                     st.pop();
-                    NFA first = st.top();
+                    NFA first = std::move(st.top());
                     st.pop();
-                    st.push(create_nfa_concat(state_count, first, second));
+                    st.push(create_nfa_concat(state_count, std::move(first), std::move(second)));
                     break;
                 }
                 default:
@@ -229,7 +227,7 @@ NFA parse_postfix(const std::vector<Token>& postfix)
         throw bishop::ParseError("malformed postfix expression (stack size " + std::to_string(st.size()) + " at end)");
     }
 
-    return st.top();
+    return std::move(st.top());
 }
 
 std::set<State*> epsilon_closure(const std::set<State*>& states)
@@ -330,6 +328,8 @@ NFA create_nfa_union(int& id, NFA first, NFA second)
     second.end->is_accept = false;
     first.end->epsilon.push_back(end);
     second.end->epsilon.push_back(end);
+    first.release();
+    second.release();
     return {start, end};
 }
 
@@ -342,6 +342,7 @@ NFA create_nfa_kleene_star(int& id, NFA first)
     first.end->is_accept = false;
     first.end->epsilon.push_back(first.start);
     first.end->epsilon.push_back(end);
+    first.release();
     return {start, end};
 }
 
@@ -353,6 +354,7 @@ NFA create_nfa_plus(int& id, NFA first)
     first.end->is_accept = false;
     first.end->epsilon.push_back(first.start);
     first.end->epsilon.push_back(end);
+    first.release();
     return {start, end};
 }
 
@@ -364,6 +366,7 @@ NFA create_nfa_question(int& id, NFA first)
     start->epsilon.push_back(end);
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
+    first.release();
     return {start, end};
 }
 
@@ -371,14 +374,17 @@ NFA create_nfa_concat(int& id, NFA first, NFA second)
 {
     first.end->is_accept = false;
     first.end->epsilon.push_back(second.start);
-    return {first.start, second.end};
+    NFA result{first.start, second.end};
+    first.release();
+    second.release();
+    return result;
 }
 
 NFA create_nfa_lookahead(int& id, NFA inner, bool negative)
 {
     State* s = new State{id++, true};
     s->look = negative ? LookType::NegAhead : LookType::Ahead;
-    s->look_nfa = new NFA{inner.start, inner.end};
+    s->look_nfa = new NFA(std::move(inner));
     return {s, s};
 }
 
@@ -391,6 +397,7 @@ NFA create_nfa_lazy_star(int& id, NFA first)
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
     first.end->epsilon.push_back(first.start);
+    first.release();
     return {start, end};
 }
 
@@ -402,6 +409,7 @@ NFA create_nfa_lazy_plus(int& id, NFA first)
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
     first.end->epsilon.push_back(first.start);
+    first.release();
     return {start, end};
 }
 
@@ -413,6 +421,7 @@ NFA create_nfa_lazy_question(int& id, NFA first)
     start->epsilon.push_back(first.start);
     first.end->is_accept = false;
     first.end->epsilon.push_back(end);
+    first.release();
     return {start, end};
 }
 }  // namespace nfa

@@ -1,5 +1,7 @@
 #include "bishop/cache.hpp"
 
+#include <utility>
+
 namespace bishop {
 namespace cache {
 
@@ -9,37 +11,42 @@ bool PatternCache::get_nfa(const std::string& pattern, Flag flags, nfa::NFA& out
 {
     std::lock_guard<std::mutex> lk(mu_);
     std::string key = make_key(pattern, flags);
-    CompiledEntry e;
-    if (!cache_.get(key, e)) {
+    CompiledEntry* e = cache_.find(key);
+    if (!e) {
         ++misses_;
         return false;
     }
     ++hits_;
-    out = e.nfa;
+    int dummy_id = 0;
+    out = nfa::clone_nfa(dummy_id, e->nfa);
     return true;
 }
 
-void PatternCache::put_nfa(const std::string& pattern, Flag flags, const nfa::NFA& n)
+void PatternCache::put_nfa(const std::string& pattern, Flag flags, nfa::NFA n)
 {
     std::lock_guard<std::mutex> lk(mu_);
     std::string key = make_key(pattern, flags);
+    CompiledEntry* existing = cache_.find(key);
+    if (existing) {
+        existing->nfa = std::move(n);
+        return;
+    }
     CompiledEntry e;
-    cache_.get(key, e);
-    e.nfa = n;
-    cache_.put(key, e);
+    e.nfa = std::move(n);
+    cache_.put(key, std::move(e));
 }
 
 bool PatternCache::get_dfa(const std::string& pattern, Flag flags, dfa::DFA& out)
 {
     std::lock_guard<std::mutex> lk(mu_);
     std::string key = make_key(pattern, flags);
-    CompiledEntry e;
-    if (!cache_.get(key, e) || !e.dfa_ready) {
+    CompiledEntry* e = cache_.find(key);
+    if (!e || !e->dfa_ready) {
         ++misses_;
         return false;
     }
     ++hits_;
-    out = e.dfa;
+    out = e->dfa;
     return true;
 }
 
@@ -47,11 +54,16 @@ void PatternCache::put_dfa(const std::string& pattern, Flag flags, const dfa::DF
 {
     std::lock_guard<std::mutex> lk(mu_);
     std::string key = make_key(pattern, flags);
+    CompiledEntry* existing = cache_.find(key);
+    if (existing) {
+        existing->dfa = d;
+        existing->dfa_ready = true;
+        return;
+    }
     CompiledEntry e;
-    cache_.get(key, e);
     e.dfa = d;
     e.dfa_ready = true;
-    cache_.put(key, e);
+    cache_.put(key, std::move(e));
 }
 
 size_t PatternCache::size() const noexcept

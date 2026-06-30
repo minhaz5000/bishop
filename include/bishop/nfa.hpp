@@ -12,6 +12,8 @@ namespace nfa {
 
 struct NFA;
 
+void free_nfa(NFA& nfa);
+
 enum class BoundaryType { None, WordBoundary, NonWordBoundary };
 enum class LookType { None, Ahead, NegAhead };
 
@@ -29,8 +31,43 @@ struct State {
 };
 
 struct NFA {
-    State* start;
-    State* end;
+    State* start{nullptr};
+    State* end{nullptr};
+
+    NFA() = default;
+    NFA(State* s, State* e) : start(s), end(e) {}
+
+    NFA(const NFA&) = delete;
+    NFA& operator=(const NFA&) = delete;
+
+    NFA(NFA&& other) noexcept : start(other.start), end(other.end)
+    {
+        other.start = nullptr;
+        other.end = nullptr;
+    }
+
+    NFA& operator=(NFA&& other) noexcept
+    {
+        if (this != &other) {
+            free_nfa(*this);
+            start = other.start;
+            end = other.end;
+            other.start = nullptr;
+            other.end = nullptr;
+        }
+        return *this;
+    }
+
+    ~NFA()
+    {
+        free_nfa(*this);
+    }
+
+    void release() noexcept
+    {
+        start = nullptr;
+        end = nullptr;
+    }
 };
 
 NFA create_nfa_literal(int& id, char ch);
@@ -50,8 +87,6 @@ NFA create_nfa_lazy_question(int& id, NFA first);
 NFA parse_postfix(const std::vector<tokenizer::Token>& postfix);
 
 NFA clone_nfa(int& id, const NFA& src);
-
-void free_nfa(NFA& nfa);
 
 std::set<State*> epsilon_closure(const std::set<State*>& states);
 bool nfa_match(const NFA& nfa, const std::string& input, bishop::Flag flags = bishop::Flag::NONE);

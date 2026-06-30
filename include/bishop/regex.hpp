@@ -43,8 +43,7 @@ public:
             cloned = nfa::clone_nfa(id, other.nfa_);
         }
 
-        if (nfa_.start) nfa::free_nfa(nfa_);
-        nfa_ = cloned;
+        nfa_ = std::move(cloned);
         flags_ = other.flags_;
         anchored_start_ = other.anchored_start_;
         anchored_end_ = other.anchored_end_;
@@ -53,49 +52,42 @@ public:
     }
 
     Regex(Regex&& other) noexcept
-        : nfa_(other.nfa_),
+        : nfa_(std::move(other.nfa_)),
           flags_(other.flags_),
           anchored_start_(other.anchored_start_),
           anchored_end_(other.anchored_end_),
           pattern_(std::move(other.pattern_))
-    {
-        other.nfa_ = {nullptr, nullptr};
-    }
+    {}
 
     Regex& operator=(Regex&& other) noexcept
     {
         if (this == &other) return *this;
 
-        if (nfa_.start) nfa::free_nfa(nfa_);
-        nfa_ = other.nfa_;
+        nfa_ = std::move(other.nfa_);
         flags_ = other.flags_;
         anchored_start_ = other.anchored_start_;
         anchored_end_ = other.anchored_end_;
         pattern_ = std::move(other.pattern_);
-        other.nfa_ = {nullptr, nullptr};
         return *this;
     }
 
-    ~Regex()
-    {
-        if (nfa_.start) nfa::free_nfa(nfa_);
-    }
+    ~Regex() = default;
 
     void compile(const std::string& pattern, Flag flags = Flag::NONE)
     {
-        if (nfa_.start) {
-            nfa::free_nfa(nfa_);
-        }
+        nfa::NFA fresh{nullptr, nullptr};
         try {
-            flags_ = flags;
             auto tokens = tokenizer::tokenize(pattern, flags);
             auto [anc_s, anc_e] = tokenizer::strip_anchors(tokens);
-            anchored_start_ = anc_s;
-            anchored_end_ = anc_e;
             if (has_flag(flags, Flag::IGNORECASE)) tokenizer::apply_ignorecase(tokens);
             tokens = tokenizer::insert_concats(tokens);
             auto postfix = tokenizer::to_postfix(tokens);
-            nfa_ = nfa::parse_postfix(postfix);
+            fresh = nfa::parse_postfix(postfix);
+
+            nfa_ = std::move(fresh);
+            flags_ = flags;
+            anchored_start_ = anc_s;
+            anchored_end_ = anc_e;
             pattern_ = pattern;
         }
         catch (const RegexError&) {

@@ -165,7 +165,7 @@ TEST(integration_analyze_then_cache)
     bool hit = gc.get_nfa(pattern, Flag::NONE, n);
     if (!hit) {
         Regex r(pattern);
-        gc.put_nfa(pattern, Flag::NONE, r.nfa_ref());
+        gc.put_nfa(pattern, Flag::NONE, std::move(r.nfa_ref()));
     }
 
     nfa::NFA n2;

@@ -9,12 +9,22 @@ using bishop::cache::PatternCache;
 
 struct ScopedNfa {
     nfa::NFA value;
-    explicit ScopedNfa(nfa::NFA n) : value(n) {}
+    explicit ScopedNfa(nfa::NFA n) : value(std::move(n)) {}
     ScopedNfa(const ScopedNfa&) = delete;
     ScopedNfa& operator=(const ScopedNfa&) = delete;
-    ScopedNfa(ScopedNfa&& other) noexcept : value(other.value) { other.value = {nullptr, nullptr}; }
-    ~ScopedNfa() { nfa::free_nfa(value); }
-    operator nfa::NFA&() { return value; }
+    ScopedNfa(ScopedNfa&& other) noexcept : value(std::move(other.value)) {}
+    ~ScopedNfa()
+    {
+        nfa::free_nfa(value);
+    }
+    operator nfa::NFA&()
+    {
+        return value;
+    }
+    nfa::NFA take()
+    {
+        return std::move(value);
+    }
 };
 
 static ScopedNfa compile_nfa(const std::string& pat)
@@ -29,16 +39,15 @@ TEST(lru_cache_put_get)
 {
     LRUCache<std::string, int> c(4);
     c.put("a", 1);
-    int v = 0;
-    ASSERT_TRUE(c.get("a", v));
-    ASSERT_EQ(v, 1);
+    int* v = c.find("a");
+    ASSERT_TRUE(v != nullptr);
+    ASSERT_EQ(*v, 1);
 }
 
 TEST(lru_cache_miss)
 {
     LRUCache<std::string, int> c(4);
-    int v = 0;
-    ASSERT_FALSE(c.get("x", v));
+    ASSERT_TRUE(c.find("x") == nullptr);
 }
 
 TEST(lru_cache_eviction)
@@ -47,10 +56,9 @@ TEST(lru_cache_eviction)
     c.put("a", 1);
     c.put("b", 2);
     c.put("c", 3);
-    int v = 0;
-    ASSERT_FALSE(c.get("a", v));
-    ASSERT_TRUE(c.get("b", v));
-    ASSERT_TRUE(c.get("c", v));
+    ASSERT_TRUE(c.find("a") == nullptr);
+    ASSERT_TRUE(c.find("b") != nullptr);
+    ASSERT_TRUE(c.find("c") != nullptr);
 }
 
 TEST(lru_cache_lru_order)
@@ -58,11 +66,10 @@ TEST(lru_cache_lru_order)
     LRUCache<std::string, int> c(2);
     c.put("a", 1);
     c.put("b", 2);
-    int v = 0;
-    c.get("a", v);
+    c.find("a");
     c.put("c", 3);
-    ASSERT_TRUE(c.get("a", v));
-    ASSERT_FALSE(c.get("b", v));
+    ASSERT_TRUE(c.find("a") != nullptr);
+    ASSERT_TRUE(c.find("b") == nullptr);
 }
 
 TEST(lru_cache_size)
@@ -104,7 +111,7 @@ TEST(pattern_cache_put_get_nfa)
 {
     PatternCache pc(32);
     auto n = compile_nfa("abc");
-    pc.put_nfa("abc", Flag::NONE, n);
+    pc.put_nfa("abc", Flag::NONE, n.take());
     nfa::NFA out{nullptr, nullptr};
     ASSERT_TRUE(pc.get_nfa("abc", Flag::NONE, out));
     ASSERT_NE(out.start, nullptr);
@@ -121,7 +128,7 @@ TEST(pattern_cache_hit_rate)
 {
     PatternCache pc(32);
     auto n = compile_nfa("a+");
-    pc.put_nfa("a+", Flag::NONE, n);
+    pc.put_nfa("a+", Flag::NONE, n.take());
     nfa::NFA out{nullptr, nullptr};
     pc.get_nfa("a+", Flag::NONE, out);
     pc.get_nfa("b+", Flag::NONE, out);
@@ -134,7 +141,7 @@ TEST(pattern_cache_clear_resets_stats)
 {
     PatternCache pc(32);
     auto n = compile_nfa("x");
-    pc.put_nfa("x", Flag::NONE, n);
+    pc.put_nfa("x", Flag::NONE, n.take());
     nfa::NFA out{nullptr, nullptr};
     pc.get_nfa("x", Flag::NONE, out);
     pc.clear();
@@ -146,9 +153,10 @@ TEST(pattern_cache_clear_resets_stats)
 TEST(pattern_cache_flags_differentiate)
 {
     PatternCache pc(32);
-    auto n = compile_nfa("hello");
-    pc.put_nfa("hello", Flag::NONE, n);
-    pc.put_nfa("hello", Flag::IGNORECASE, n);
+    auto n1 = compile_nfa("hello");
+    auto n2 = compile_nfa("hello");
+    pc.put_nfa("hello", Flag::NONE, n1.take());
+    pc.put_nfa("hello", Flag::IGNORECASE, n2.take());
     nfa::NFA out{nullptr, nullptr};
     ASSERT_TRUE(pc.get_nfa("hello", Flag::NONE, out));
     ASSERT_TRUE(pc.get_nfa("hello", Flag::IGNORECASE, out));
